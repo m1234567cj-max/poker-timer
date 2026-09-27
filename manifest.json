@@ -1,0 +1,50 @@
+{
+  "name": "德州扑克赛事投屏计时系统",
+  "short_name": "扑克计时器",
+  "description": "德州扑克竞技俱乐部赛事投屏计时器 · 盲注时钟 · 12 套主题 · 可离线使用",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "start_url": ".",
+  "scope": ".",
+  "id": "poker-timer-fengcheng",
+  "background_color": "#0a0817",
+  "theme_color": "#d4af37",
+  "categories": ["utilities", "sports", "entertainment"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "直接投屏",
+      "short_name": "投屏",
+      "url": "./#screen",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "演示赛",
+      "short_name": "演示",
+      "url": "./#demo",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

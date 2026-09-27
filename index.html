@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>德州扑克赛事投屏计时系统</title>
+<!-- ===== PWA：可安装 + 离线可用（2026-09-27 加） ===== -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#d4af37">
+<meta name="description" content="德州扑克竞技俱乐部赛事投屏计时器 · 盲注时钟 · 12 套主题 · 可离线使用">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="扑克计时器">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+<style>
+/* ============ 基础 & 主题变量 ============ */
+:root {
+  --bg1: #14102a;
+  --bg2: #0a0817;
+  --accent: #8a6cff;
+  --accent2: #ff3b30;
+  --gold: #ffd24a;
+  --text: #ffffff;
+  --muted: #8b93b8;
+  --card: rgba(20,16,42,.66);
+  --line: rgba(140,120,255,.22);
+  --timer-glow: rgba(255,59,48,.9);
+  --font-num: "Bahnschrift","Arial Rounded MT Bold","Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+}
+body[data-theme="暗金奢华版"] {
+  --bg1: #171104; --bg2: #050301;
+  --accent: #d4af37; --accent2: #b8860b; --gold: #ffe08a;
+  --text: #f5ead0; --muted: #9c8b5f;
+  --card: rgba(24,17,3,.72); --line: rgba(212,175,55,.28);
+  --timer-glow: rgba(255,224,138,.95);
+}
+body[data-theme="霓虹夜店版"] {
+  --bg1: #180019; --bg2: #030006;
+  --accent: #ff2d95; --accent2: #00e5ff; --gold: #ffea00;
+  --text: #ffffff; --muted: #b07aa0;
+  --card: rgba(24,0,26,.72); --line: rgba(255,45,149,.3);
+  --timer-glow: rgba(0,229,255,.95);
+}
+body[data-theme="专业版"] {
+  --bg1: #0a2136; --bg2: #020a12;
+  --accent: #2f9dff; --accent2: #00c8a0; --gold: #ffc24a;
+  --text: #eaf6ff; --muted: #6f93ad;
+  --card: rgba(10,33,54,.7); --line: rgba(47,157,255,.28);
+  --timer-glow: rgba(47,157,255,.95);
+}
+body[data-theme="简约版"] {
+  --bg1: #141417; --bg2: #000000;
+  --accent: #ffffff; --accent2: #e0e0e0; --gold: #d8d8d8;
+  --text: #f2f2f2; --muted: #6a6a6a;
+  --card: rgba(20,20,23,.7); --line: rgba(255,255,255,.14);
+  --timer-glow: rgba(255,255,255,.85);
+}
+body[data-theme="钢铁侠版"] {
+  --bg1: #30060a; --bg2: #0a0102;
+  --accent: #ffc93c; --accent2: #e8202f; --gold: #ffd75e;
+  --text: #fff6e8; --muted: #c08a5e;
+  --card: rgba(48,6,10,.72); --line: rgba(255,201,60,.32);
+  --timer-glow: rgba(255,110,50,.95);
+}
+body[data-theme="极光潮流版"] {
+  --bg1: #160033; --bg2: #020008;
+  --accent: #00f0ff; --accent2: #ff2df7; --gold: #ffe94a;
+  --text: #ffffff; --muted: #9a7fc0;
+  --card: rgba(22,0,51,.68); --line: rgba(0,240,255,.28);
+  --timer-glow: rgba(0,240,255,.95);
+}
+
+/* ============ 未来竞技场版（未来科技扑克空间 · 原创电竞HUD） ============ */
+/* 新主题专属元素默认隐藏，仅「未来竞技场」显示 */
+.level-ring, .timer-core, .brand-wing, .energy-line, .table-block, .player-hud { display:none; }
+
+body[data-theme="未来竞技场"] {
+  --bg1: #070A12; --bg2: #05070D;
+  --accent: #00F5FF; --accent2: #006EFF; --gold: #D8B36A;
+  --text: #F2F7FF; --muted: #7E8CB0;
+  --card: rgba(10,18,38,.5); --line: rgba(0,245,255,.22);
+  --timer-glow: rgba(0,245,255,.8);
+}
+body[data-theme="未来竞技场"] #display {
+  background:
+    radial-gradient(1100px 640px at 50% -14%, rgba(0,110,255,.26), transparent 60%),
+    radial-gradient(900px 620px at 94% 116%, rgba(123,44,255,.20), transparent 55%),
+    radial-gradient(700px 500px at 6% 112%, rgba(0,245,255,.10), transparent 55%),
+    linear-gradient(180deg, #070A12 0%, #0A0F1E 55%, #05070D 100%);
+}
+/* 电竞网格底纹（中心渐隐） */
+body[data-theme="未来竞技场"] #display::before {
+  content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(0,245,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,255,.05) 1px, transparent 1px);
+  background-size: 6.4vw 6.4vw;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,.9), transparent 78%);
+  mask-image: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,.9), transparent 78%);
+}
+
+/* 顶部：动态能量线条 + 电竞 LOGO 斜翼 */
+body[data-theme="未来竞技场"] .brand-wing { display:block; position:absolute; top:3.4vh; width:15vw; height:5px; z-index:2; pointer-events:none;
+  background:linear-gradient(90deg, transparent, rgba(0,245,255,.8), rgba(0,110,255,.95));
+  clip-path:polygon(0 0, 100% 0, 92% 100%, 0 100%);
+  filter:drop-shadow(0 0 8px rgba(0,245,255,.6));
+}
+body[data-theme="未来竞技场"] .brand-wing.left { left:0; }
+body[data-theme="未来竞技场"] .brand-wing.right { right:0; transform:scaleX(-1); }
+body[data-theme="未来竞技场"] .energy-line { display:block; height:2px; width:100%; max-width:560px; margin:0 auto 1.1vh; position:relative; overflow:hidden;
+  background:linear-gradient(90deg, transparent, rgba(0,245,255,.28), transparent);
+}
+body[data-theme="未来竞技场"] .energy-line::before {
+  content:""; position:absolute; top:0; left:-35%; width:34%; height:100%;
+  background:linear-gradient(90deg, transparent, #00F5FF, #006EFF, transparent);
+  filter:drop-shadow(0 0 6px rgba(0,245,255,.9));
+  animation:energy-flow 2.6s linear infinite;
+}
+body[data-theme="未来竞技场"] .energy-line.rev::before { animation-direction:reverse; animation-duration:3.6s; }
+@keyframes energy-flow { 0% { left:-35%; } 100% { left:105%; } }
+/* 品牌标题 */
+body[data-theme="未来竞技场"] .title-wrap .venue {
+  background:none; -webkit-text-fill-color:currentColor;
+  color:#BFE9FF; letter-spacing:6px; font-weight:600;
+  text-shadow:0 0 14px rgba(0,245,255,.55);
+}
+body[data-theme="未来竞技场"] .title-wrap .tname {
+  background:linear-gradient(180deg,#FFFFFF 0%,#BFE9FF 55%,#00F5FF 100%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  color:#fff; letter-spacing:8px;
+  filter:drop-shadow(0 0 12px rgba(0,245,255,.5)) drop-shadow(0 2px 18px rgba(0,110,255,.45));
+}
+
+/* 中央：环形赛事进度 + 能量核心光圈 + 3D 立体倒计时 */
+body[data-theme="未来竞技场"] .level-badge { display:none; }
+body[data-theme="未来竞技场"] .level-ring {
+  display:flex; width:clamp(84px,9.5vw,132px); aspect-ratio:1; border-radius:50%;
+  align-items:center; justify-content:center; margin-bottom:1vh;
+  background:conic-gradient(from 220deg, #00F5FF calc(var(--p,0)*1%), #006EFF calc(var(--p,0)*1%), rgba(255,255,255,.07) 0);
+  filter:drop-shadow(0 0 14px rgba(0,245,255,.45));
+}
+body[data-theme="未来竞技场"] .level-ring .ring-inner {
+  width:76%; height:76%; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, rgba(20,32,64,.92), #0A1120 72%);
+  border:1px solid rgba(0,245,255,.25);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  box-shadow:inset 0 0 24px rgba(0,110,255,.25);
+}
+body[data-theme="未来竞技场"] .level-ring .ring-lbl { font-size:clamp(9px,.9vw,13px); letter-spacing:3px; color:var(--muted); }
+body[data-theme="未来竞技场"] .level-ring .ring-num { font-size:clamp(26px,3vw,42px); font-weight:900; font-family:var(--font-num); color:#fff; line-height:1; text-shadow:0 0 16px rgba(0,245,255,.8); }
+body[data-theme="未来竞技场"] .center-col { position:relative; z-index:60; }
+body[data-theme="未来竞技场"] .disp-body { position:relative; z-index:2 !important; }
+body[data-theme="未来竞技场"] .round-line {
+  position:relative; z-index:3;
+  font-size:clamp(42px,5vw,78px); letter-spacing:6px;
+  color:#00F5FF; font-weight:800;
+  text-shadow:0 0 24px rgba(0,245,255,.6), 0 2px 4px rgba(0,0,0,.7);
+  margin:0;
+}
+body[data-theme="未来竞技场"] .timer-core {
+  display:block; position:absolute; left:50%; top:56%; transform:translate(-50%,-50%);
+  width:112%; max-width:780px; aspect-ratio:1; border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle, rgba(0,245,255,.18) 0%, rgba(0,110,255,.08) 40%, rgba(123,44,255,.05) 62%, transparent 72%);
+  animation:core-pulse 3.2s ease-in-out infinite;
+}
+@keyframes core-pulse { 0%,100% { opacity:.7; transform:translate(-50%,-50%) scale(.96); } 50% { opacity:1; transform:translate(-50%,-50%) scale(1.06); } }
+body[data-theme="未来竞技场"] .timer {
+  position:relative; z-index:1;
+  background:linear-gradient(180deg,#FFFFFF 0%,#E6F6FF 30%,#7FD8FF 68%,#00B8F0 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  -webkit-text-stroke:1px rgba(0,245,255,.26);
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.45)) drop-shadow(0 2px 1px rgba(0,0,0,.65))
+          drop-shadow(0 4px 10px rgba(0,110,255,.4)) drop-shadow(0 0 22px rgba(0,245,255,.3));
+}
+body[data-theme="未来竞技场"] .timer.break-mode {
+  background:linear-gradient(180deg,#FFFFFF 0%,#D8B36A 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  -webkit-text-stroke:1px rgba(216,179,106,.3);
+  filter:drop-shadow(0 2px 1px rgba(0,0,0,.65)) drop-shadow(0 0 30px rgba(216,179,106,.5));
+}
+
+/* 比赛信息：未来科技 HUD 玻璃面板（斜切角 + 顶部光条） */
+body[data-theme="未来竞技场"] .info-block,
+body[data-theme="未来竞技场"] .blind-block {
+  background:linear-gradient(160deg, rgba(14,24,48,.62), rgba(8,12,26,.55));
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(0,245,255,.18); position:relative;
+  clip-path:polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  box-shadow:0 10px 30px rgba(0,0,0,.35), inset 0 0 18px rgba(0,110,255,.06);
+}
+body[data-theme="未来竞技场"] .info-block::before,
+body[data-theme="未来竞技场"] .blind-block::before {
+  content:""; position:absolute; top:0; left:0; width:38%; height:2px; pointer-events:none;
+  background:linear-gradient(90deg,#00F5FF,transparent);
+  filter:drop-shadow(0 0 6px rgba(0,245,255,.8));
+}
+body[data-theme="未来竞技场"] .info-block .val { color:#EAF7FF; text-shadow:0 0 16px rgba(0,245,255,.4); }
+body[data-theme="未来竞技场"] .info-block .val.gold { color:#D8B36A; text-shadow:0 0 16px rgba(216,179,106,.5); }
+body[data-theme="未来竞技场"] .info-block .val.acc { color:#00F5FF; text-shadow:0 0 16px rgba(0,245,255,.65); }
+body[data-theme="未来竞技场"] .info-block.hl { border-color:rgba(0,245,255,.5); box-shadow:0 0 26px rgba(0,245,255,.16), inset 0 0 22px rgba(0,110,255,.08); }
+body[data-theme="未来竞技场"] .blind-block .num { color:#fff; text-shadow:0 0 14px rgba(0,245,255,.5); }
+body[data-theme="未来竞技场"] .blind-block.hl { border-color:rgba(0,245,255,.55); }
+body[data-theme="未来竞技场"] .blind-block.hl .num { color:#00F5FF; text-shadow:0 0 18px rgba(0,245,255,.75); }
+body[data-theme="未来竞技场"] .next-line .val { color:#7FD8FF; }
+body[data-theme="未来竞技场"] .ante-line b { color:#D8B36A; }
+/* 桌台编号 TABLE 01 */
+body[data-theme="未来竞技场"] .table-block { display:block; }
+body[data-theme="未来竞技场"] .table-block .val { font-size:clamp(24px,3vw,44px); letter-spacing:2px; color:#00F5FF; text-shadow:0 0 18px rgba(0,245,255,.7); }
+
+/* 玩家状态系统：圆形头像 + 编号 + 排名 + 积分能量条 */
+body[data-theme="未来竞技场"] .player-hud {
+  display:flex; align-items:center; gap:1.6vw; margin:0 3vw 1.2vh; padding:1.4vh 1.6vw;
+  position:relative; z-index:1;
+  background:linear-gradient(160deg, rgba(14,24,48,.55), rgba(8,12,26,.5));
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(0,245,255,.16);
+  clip-path:polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+body[data-theme="未来竞技场"] .ph-title {
+  writing-mode:vertical-rl; text-orientation:mixed; letter-spacing:5px;
+  font-size:clamp(11px,1vw,15px); color:var(--muted); font-weight:bold;
+  border-left:2px solid rgba(0,245,255,.5); padding-left:.6vw; height:100%;
+}
+body[data-theme="未来竞技场"] .ph-list { flex:1; display:flex; gap:1.4vw; justify-content:space-around; }
+.p-card { display:flex; align-items:center; gap:1vw; min-width:0; flex:1; max-width:23vw; }
+.p-avatar {
+  position:relative; width:clamp(44px,4.4vw,64px); aspect-ratio:1; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:clamp(18px,1.9vw,28px); font-weight:900; color:#fff;
+  background:radial-gradient(circle at 32% 28%, rgba(255,255,255,.38), transparent 55%), var(--av,#006EFF);
+  border:2px solid rgba(255,255,255,.35);
+  box-shadow:0 0 16px color-mix(in srgb, var(--av,#006EFF) 55%, transparent);
+}
+.p-avatar .p-no {
+  position:absolute; bottom:-6%; right:-6%; font-size:clamp(9px,.8vw,12px);
+  background:#0A1120; border:1px solid rgba(0,245,255,.5); border-radius:999px;
+  padding:.18em .5em; font-family:var(--font-num); color:#00F5FF; white-space:nowrap;
+}
+.p-info { flex:1; min-width:0; }
+.p-top { display:flex; justify-content:space-between; align-items:baseline; gap:.6vw; }
+.p-name { font-size:clamp(14px,1.4vw,20px); font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.p-rank { font-size:clamp(10px,1vw,14px); color:#D8B36A; letter-spacing:2px; font-family:var(--font-num); white-space:nowrap; text-shadow:0 0 10px rgba(216,179,106,.5); }
+.p-bar { height:clamp(8px,.8vw,12px); margin-top:.5vh; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; border:1px solid rgba(0,245,255,.15); }
+.p-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,#006EFF,#00F5FF,#7B2CFF); box-shadow:0 0 12px rgba(0,245,255,.6); transition:width .6s ease; }
+.p-chips { font-size:clamp(11px,1.05vw,15px); color:#BFE9FF; font-family:var(--font-num); margin-top:.3vh; letter-spacing:1px; }
+.ph-empty { color:var(--muted); font-size:clamp(14px,1.4vw,20px); letter-spacing:3px; flex:1; text-align:center; }
+/* 报名按钮：科技绿 */
+body[data-theme="未来竞技场"] .signup-btn {
+  background:linear-gradient(180deg, #00E58C, #00C96F);
+  box-shadow:0 6px 22px rgba(0,201,111,.4);
+}
+body[data-theme="未来竞技场"] .disp-disclaimer { color:#56617E; }
+
+/* ============ 电竞青蓝版（未来科技 · 电竞赛事直播后台风） ============ */
+body[data-theme="电竞青蓝版"] {
+  --bg1: #24104F; --bg2: #0A0420;
+  --accent: #00E5FF; --accent2: #0066FF; --gold: #00E5FF;
+  --text: #FFFFFF; --muted: #93A7CC;
+  --card: rgba(36,16,79,.52); --line: rgba(0,229,255,.24);
+  --timer-glow: rgba(0,229,255,.85);
+}
+body[data-theme="电竞青蓝版"] #display {
+  background:
+    radial-gradient(1200px 700px at 50% -12%, rgba(0,102,255,.30), transparent 62%),
+    radial-gradient(1000px 640px at 88% 112%, rgba(0,229,255,.16), transparent 55%),
+    linear-gradient(180deg, #24104F 0%, #1B0B3F 52%, #0A0420 100%);
+}
+/* 顶部标题：亮青蓝色 + 轻微发光 */
+body[data-theme="电竞青蓝版"] .title-wrap .venue {
+  background: linear-gradient(90deg, #00E5FF, #0066FF);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(0,229,255,.5));
+}
+body[data-theme="电竞青蓝版"] .title-wrap .tname {
+  color: #EAF7FF;
+  text-shadow: 0 0 16px rgba(0,229,255,.65), 0 0 42px rgba(0,102,255,.5);
+}
+/* 核心倒计时：白色 + 青蓝渐变 + 蓝色光晕 */
+body[data-theme="电竞青蓝版"] .timer {
+  background: linear-gradient(180deg, #FFFFFF 0%, #A8F0FF 38%, #00E5FF 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 14px rgba(0,229,255,.55)) drop-shadow(0 0 46px rgba(0,102,255,.55));
+}
+body[data-theme="电竞青蓝版"] .timer.break-mode {
+  background: linear-gradient(180deg, #FFFFFF 0%, #00E5FF 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 16px rgba(0,229,255,.7));
+}
+/* 比赛信息区域：深紫透明玻璃质感面板 */
+body[data-theme="电竞青蓝版"] .info-block {
+  background: linear-gradient(180deg, rgba(41,20,88,.58), rgba(18,10,42,.5));
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,229,255,.20);
+}
+body[data-theme="电竞青蓝版"] .info-block.hl {
+  border-color: rgba(0,229,255,.55);
+  box-shadow: 0 0 26px rgba(0,229,255,.18), inset 0 0 20px rgba(0,102,255,.08);
+}
+body[data-theme="电竞青蓝版"] .blind-block {
+  background: linear-gradient(180deg, rgba(41,20,88,.58), rgba(18,10,42,.5));
+  border: 1px solid rgba(0,229,255,.20);
+}
+body[data-theme="电竞青蓝版"] .blind-block.hl {
+  border-color: rgba(0,229,255,.6);
+  box-shadow: 0 0 26px rgba(0,229,255,.22);
+}
+body[data-theme="电竞青蓝版"] .blind-block.hl .num {
+  color: #00E5FF;
+  text-shadow: 0 0 18px rgba(0,229,255,.7);
+}
+/* 绿色报名按钮 */
+body[data-theme="电竞青蓝版"] .signup-btn {
+  background: linear-gradient(180deg, #00E58C, #00D97E);
+  box-shadow: 0 6px 22px rgba(0,217,126,.42);
+}
+
+/* ============ 抖音参考图①：紫焰竞技版（深紫底 + 青→黄渐变霓虹倒计时） ============ */
+body[data-theme="抖音紫焰版"] {
+  --bg1: #4A00A3; --bg2: #7C00B5;
+  --accent: #00F5FF; --accent2: #FF3B30; --gold: #FFCB33;
+  --text: #F5FCFF; --muted: #D9CCFF;
+  --card: rgba(255,255,255,.10); --line: rgba(255,255,255,.20);
+  --timer-glow: rgba(0,245,255,.9);
+}
+body[data-theme="抖音紫焰版"] #display {
+  background:
+    radial-gradient(1200px 700px at 50% -10%, rgba(124,0,181,.5), transparent 60%),
+    linear-gradient(180deg, #4A00A3 0%, #6F0A84 55%, #7C00B5 100%);
+}
+body[data-theme="抖音紫焰版"] .timer {
+  background: linear-gradient(90deg, #00F5FF 0%, #F5F000 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 16px rgba(0,245,255,.75)) drop-shadow(0 0 42px rgba(255,59,48,.55)) drop-shadow(0 2px 2px rgba(0,0,0,.4));
+}
+body[data-theme="抖音紫焰版"] .timer.break-mode {
+  background: linear-gradient(90deg,#FFD24A,#FFCB33);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 16px rgba(255,203,51,.8));
+}
+body[data-theme="抖音紫焰版"] .info-block {
+  border-radius:0; background:rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(255,255,255,.22);
+}
+body[data-theme="抖音紫焰版"] .info-block .val { color:#FFCB33; text-shadow:0 0 14px rgba(255,203,51,.6); }
+body[data-theme="抖音紫焰版"] .info-block.hl { border-color:#00F5FF; box-shadow:none; }
+body[data-theme="抖音紫焰版"] .blind-block { background:rgba(255,255,255,.10); border-radius:14px; }
+body[data-theme="抖音紫焰版"] .blind-block.hl { border-color:#FFCB33; box-shadow:0 0 22px rgba(255,203,51,.3); }
+body[data-theme="抖音紫焰版"] .blind-block .num { color:#FFCB33; }
+body[data-theme="抖音紫焰版"] .blind-block.hl .num { color:#F5F000; }
+body[data-theme="抖音紫焰版"] .disp-deadline b { color:#FFCB33; }
+body[data-theme="抖音紫焰版"] .title-wrap .venue,
+body[data-theme="抖音红焰版"] .title-wrap .venue {
+  background:none; -webkit-text-fill-color:currentColor;
+  color:rgba(255,255,255,.92); letter-spacing:4px;
+}
+
+/* ============ 抖音参考图②：红焰竞技版（深红底 + 金色放射光效 + 纯白大字） ============ */
+body[data-theme="抖音红焰版"] {
+  --bg1: #C71E1F; --bg2: #FF5252;
+  --accent: #FFD24A; --accent2: #FF8A00; --gold: #FFD24A;
+  --text: #FFFFFF; --muted: #FFD9D9;
+  --card: rgba(255,255,255,.16); --line: rgba(255,255,255,.30);
+  --timer-glow: rgba(199,30,31,.95);
+}
+body[data-theme="抖音红焰版"] #display {
+  background:
+    radial-gradient(900px 600px at 50% 42%, rgba(255,210,74,.30), transparent 62%),
+    radial-gradient(1400px 800px at 85% 110%, rgba(255,138,0,.25), transparent 55%),
+    linear-gradient(135deg, #C71E1F 0%, #E8452A 45%, #FF5252 100%);
+}
+body[data-theme="抖音红焰版"] .timer {
+  color:#FFFFFF;
+  text-shadow: 0 0 18px rgba(199,30,31,.9), 0 0 60px rgba(255,82,82,.8), 0 2px 3px rgba(0,0,0,.35);
+}
+body[data-theme="抖音红焰版"] .timer.break-mode { color:#FFD24A; text-shadow:0 0 20px rgba(255,210,74,.85); }
+body[data-theme="抖音红焰版"] .info-block {
+  border-radius:14px; background:rgba(255,255,255,.14);
+  border-bottom:1px solid rgba(255,255,255,.25);
+  box-shadow:0 6px 18px rgba(0,0,0,.18);
+}
+body[data-theme="抖音红焰版"] .info-block .val { color:#FFFFFF; }
+body[data-theme="抖音红焰版"] .blind-block { background:rgba(255,255,255,.88); border-radius:18px; border-color:transparent; box-shadow:0 8px 24px rgba(120,10,10,.35); }
+body[data-theme="抖音红焰版"] .blind-block .lbl { color:#A3241F; }
+body[data-theme="抖音红焰版"] .blind-block .num { color:#C71E1F; }
+body[data-theme="抖音红焰版"] .blind-block.hl { border-color:#C71E1F; box-shadow:0 8px 24px rgba(120,10,10,.4); }
+body[data-theme="抖音红焰版"] .blind-block.hl .num { color:#C71E1F; }
+body[data-theme="抖音红焰版"] .next-line { color:#FFD24A; }
+body[data-theme="抖音红焰版"] .ante-line { color:#FFE9C9; }
+body[data-theme="抖音红焰版"] .disp-disclaimer { color:#FFE9C9; }
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { height:100%; }
+body {
+  font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(120,70,220,.22), transparent 60%),
+    linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 100%);
+  overflow-x:hidden;
+}
+::-webkit-scrollbar { width:10px; height:10px; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,.15); border-radius:6px; }
+
+/* ============ 控制台 ============ */
+#console { min-height:100vh; padding-bottom:40px; }
+.console-head {
+  text-align:center; padding:22px 14px 8px; position:relative;
+}
+.console-head .logo {
+  font-size:12px; letter-spacing:8px; color:var(--gold); text-transform:uppercase;
+  font-weight:bold; text-shadow:0 0 14px var(--gold);
+}
+.console-head h1 { font-size:26px; letter-spacing:3px; margin-top:6px; }
+.console-head p { color:var(--muted); font-size:13px; margin-top:6px; letter-spacing:1px; }
+
+.top-actions {
+  display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
+  margin:14px auto 4px; max-width:980px; padding:0 12px;
+}
+.top-actions select {
+  background:rgba(0,0,0,.4); border:1px solid var(--line); color:var(--text);
+  border-radius:10px; padding:9px 12px; font-size:14px; outline:none;
+}
+
+.tabs { display:flex; justify-content:center; gap:8px; margin:12px auto; flex-wrap:wrap; max-width:980px; padding:0 12px; }
+.tab-btn {
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.14);
+  color:#cdd6f0; padding:10px 18px; border-radius:999px; cursor:pointer;
+  font-size:14px; transition:all .2s; letter-spacing:1px;
+}
+.tab-btn:hover { border-color:var(--accent); color:var(--accent); }
+.tab-btn.active {
+  background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 60%,#000));
+  color:#fff; border-color:transparent; font-weight:bold;
+  box-shadow:0 6px 22px rgba(0,0,0,.5);
+}
+
+.panel { display:none; max-width:980px; margin:0 auto; padding:0 12px; }
+.panel.active { display:block; }
+.card {
+  background:var(--card); backdrop-filter:blur(10px);
+  border:1px solid var(--line); border-radius:16px;
+  padding:20px; margin-bottom:16px; box-shadow:0 8px 30px rgba(0,0,0,.35);
+}
+.card h2 { font-size:16px; margin-bottom:14px; color:var(--gold); letter-spacing:1px; }
+.card h2 .dot { color:var(--accent2); margin-right:6px; }
+
+input, select, textarea {
+  background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.16);
+  color:#fff; border-radius:10px; padding:10px 13px; font-size:14px; outline:none;
+  transition:border .2s;
+}
+input:focus, textarea:focus { border-color:var(--accent); }
+input::placeholder, textarea::placeholder { color:#5a6378; }
+textarea { width:100%; resize:vertical; font-family:inherit; line-height:1.6; }
+
+button { border:none; border-radius:10px; padding:10px 16px; font-size:14px; cursor:pointer; transition:all .15s; letter-spacing:1px; font-family:inherit; }
+.btn-gold { background:linear-gradient(135deg,var(--gold),#c8962a); color:#1a1000; font-weight:bold; box-shadow:0 4px 16px rgba(255,210,74,.3); }
+.btn-gold:hover { transform:translateY(-1px); }
+.btn-green { background:linear-gradient(135deg,#1f9d6d,#167a54); color:#fff; }
+.btn-green:hover { transform:translateY(-1px); }
+.btn-blue { background:linear-gradient(135deg,#2f9dff,#1a5fbf); color:#fff; font-weight:bold; }
+.btn-red { background:transparent; color:#ff8d7a; border:1px solid rgba(255,92,92,.45); }
+.btn-red:hover { background:rgba(255,92,92,.14); }
+.btn-mini { padding:5px 12px; font-size:13px; }
+.btn-big { font-size:16px; padding:12px 26px; border-radius:999px; letter-spacing:2px; }
+
+.row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.row.between { justify-content:space-between; }
+
+table { width:100%; border-collapse:collapse; }
+th,td { padding:9px 8px; text-align:left; border-bottom:1px solid rgba(255,255,255,.07); font-size:14px; }
+th { color:var(--muted); font-weight:normal; font-size:12px; letter-spacing:1px; }
+tr.current-level td { background:linear-gradient(90deg,rgba(255,59,48,.16),rgba(255,59,48,.03)); font-weight:bold; border-left:3px solid var(--accent2); }
+tr.past-level td { opacity:.4; }
+.muted { color:var(--muted); font-size:13px; }
+.empty { text-align:center; color:var(--muted); padding:28px 0; }
+
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-top:14px; }
+.stat-box {
+  background:linear-gradient(180deg,rgba(0,0,0,.32),rgba(0,0,0,.2));
+  border:1px solid var(--line); border-radius:13px; padding:15px; text-align:center;
+}
+.stat-box .num { font-size:26px; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums; font-family:var(--font-num); }
+.stat-box .lbl { font-size:12px; color:var(--muted); margin-top:4px; letter-spacing:2px; }
+
+.toast {
+  position:fixed; top:20px; left:50%; transform:translateX(-50%);
+  background:#14102a; color:#fff; padding:11px 26px; border-radius:999px;
+  font-size:14px; opacity:0; transition:opacity .3s; z-index:999; pointer-events:none;
+  border:1px solid var(--accent); box-shadow:0 8px 30px rgba(0,0,0,.5);
+}
+.toast.show { opacity:.96; }
+
+/* ============ 投屏大屏（全屏） ============ */
+#display {
+  position:fixed; inset:0; display:none; z-index:50;
+  flex-direction:column; overflow:hidden;
+  background:
+    radial-gradient(1400px 700px at 50% -10%, color-mix(in srgb,var(--accent) 20%,transparent), transparent 60%),
+    radial-gradient(900px 600px at 90% 110%, color-mix(in srgb,var(--accent2) 16%,transparent), transparent 55%),
+    linear-gradient(180deg, var(--bg1), var(--bg2));
+}
+#display.active { display:flex; }
+/* 噪点 */
+#display::after {
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.5; z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+#display > * { position:relative; z-index:1; }
+
+.disp-top {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:2vh 3vw; gap:20px;
+}
+.disp-top .liveclock { width:14vw; font-size:clamp(30px,4.2vw,58px); color:var(--muted); font-variant-numeric:tabular-nums; font-family:var(--font-num); }
+.title-wrap { flex:1; text-align:center; }
+.title-wrap .venue {
+  font-size:clamp(28px,3.6vw,48px); letter-spacing:3px; margin-bottom:.6vh;
+  background:linear-gradient(90deg,var(--gold),var(--accent));
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.title-wrap .tname {
+  font-size:clamp(48px,7vw,96px); font-weight:900; letter-spacing:6px;
+  text-shadow:0 0 24px color-mix(in srgb,var(--accent) 50%,transparent);
+}
+.disp-top .spacer { width:14vw; }
+
+.disp-body {
+  flex:1; display:grid; grid-template-columns:1fr 1.5fr 1fr;
+  gap:1.2vw; padding:1vh 3vw; align-items:stretch; min-height:0;
+}
+
+/* 左/右信息栏 */
+.side-col { display:flex; flex-direction:column; gap:1.4vh; justify-content:center; }
+.info-block {
+  background:var(--card); border:1px solid var(--line); border-radius:1vw;
+  padding:1.6vh 1.4vw; text-align:center; backdrop-filter:blur(6px);
+}
+.info-block .lbl { font-size:clamp(24px,2.6vw,38px); color:var(--muted); letter-spacing:3px; margin-bottom:.8vh; }
+.info-block .val { font-size:clamp(50px,6.5vw,92px); font-weight:900; font-family:var(--font-num); color:var(--text); line-height:1; }
+.info-block .val.gold { color:var(--gold); text-shadow:0 0 18px color-mix(in srgb,var(--gold) 55%,transparent); }
+.info-block .val.acc { color:var(--accent); text-shadow:0 0 18px color-mix(in srgb,var(--accent) 55%,transparent); }
+.info-block.hl { border-color:var(--accent); box-shadow:0 0 24px color-mix(in srgb,var(--accent) 25%,transparent); }
+
+/* 中央 */
+.center-col { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1vh; }
+.level-badge {
+  font-size:clamp(44px,5.6vw,88px); letter-spacing:6px; color:var(--accent); font-weight:bold;
+  text-shadow:0 0 20px color-mix(in srgb,var(--accent) 70%,transparent);
+}
+.round-line {
+  font-size:clamp(48px,6.2vw,96px); letter-spacing:8px; color:var(--accent); font-weight:bold;
+  text-shadow:0 0 22px color-mix(in srgb,var(--accent) 70%,transparent);
+  margin-bottom:.2vh;
+  font-family:var(--font-num);
+}
+.timer {
+  font-size:clamp(140px,26vw,380px); font-weight:900; line-height:.95;
+  font-family:var(--font-num); font-variant-numeric:tabular-nums; letter-spacing:2px;
+  color:var(--text);
+  text-shadow:0 0 20px var(--timer-glow), 0 0 60px var(--timer-glow);
+  margin:.4vh 0;
+}
+.timer.warning { animation:blink 1s infinite; }
+@keyframes blink { 50% { opacity:.28; } }
+
+/* ============ 中场休息大横幅 ============ */
+.break-banner {
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  gap:.6vh; margin-top:1vh; padding:1.6vh 3vw;
+  border-radius:1.4vw;
+  background:linear-gradient(180deg, rgba(255,59,48,.22), rgba(255,59,48,.06));
+  border:2px solid var(--accent2);
+  box-shadow:0 0 40px color-mix(in srgb,var(--accent2) 40%,transparent), inset 0 0 30px rgba(0,0,0,.25);
+  animation:break-pulse 1.6s ease-in-out infinite;
+}
+.break-banner.show { display:flex; }
+@keyframes break-pulse {
+  0%,100% { box-shadow:0 0 30px color-mix(in srgb,var(--accent2) 35%,transparent), inset 0 0 24px rgba(0,0,0,.25); }
+  50% { box-shadow:0 0 60px color-mix(in srgb,var(--accent2) 65%,transparent), inset 0 0 34px rgba(0,0,0,.3); }
+}
+.break-banner .bb-title {
+  font-size:clamp(64px,9vw,150px); font-weight:900; letter-spacing:10px; line-height:1;
+  color:var(--accent2);
+  text-shadow:0 0 24px color-mix(in srgb,var(--accent2) 70%,transparent), 0 2px 4px rgba(0,0,0,.6);
+  font-family:var(--font-num);
+}
+.break-banner .bb-sub {
+  font-size:clamp(26px,3.4vw,52px); font-weight:bold; letter-spacing:6px;
+  color:var(--gold);
+  text-shadow:0 0 18px color-mix(in srgb,var(--gold) 60%,transparent), 0 2px 3px rgba(0,0,0,.6);
+}
+.timer.break-mode { color:var(--gold); text-shadow:0 0 20px color-mix(in srgb,var(--gold) 80%,transparent); }
+
+.blinds-row { display:flex; gap:1.6vw; align-items:stretch; }
+.blind-block {
+  min-width:10vw; padding:1.8vh 2vw; text-align:center;
+  background:var(--card); border:1px solid var(--line); border-radius:1vw;
+}
+.blind-block .lbl { font-size:clamp(24px,2.4vw,36px); color:var(--muted); letter-spacing:3px; margin-bottom:.8vh; }
+.blind-block .num { font-size:clamp(80px,10vw,150px); font-weight:900; font-family:var(--font-num); line-height:1; }
+.blind-block.hl { border-color:var(--gold); box-shadow:0 0 22px color-mix(in srgb,var(--gold) 22%,transparent); }
+.blind-block.hl .num { color:var(--gold); text-shadow:0 0 18px color-mix(in srgb,var(--gold) 60%,transparent); }
+
+.next-line { font-size:clamp(40px,5vw,72px); color:var(--accent); font-weight:bold; letter-spacing:2px; }
+.next-line .lbl { color:var(--muted); font-size:.62em; font-weight:normal; letter-spacing:3px; margin-right:.6vw; }
+.next-line .val { color:var(--text); }
+.ante-line { font-size:clamp(28px,3vw,44px); color:var(--muted); letter-spacing:2px; }
+.ante-line b { color:var(--gold); font-family:var(--font-num); }
+
+.disp-bottom {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:20px; padding:1.2vh 3vw 1.6vh;
+}
+/* 「接受报名」绿色按钮（对标抖音参考图） */
+.signup-btn {
+  display:inline-block; padding:1.1vh 2.2vw; border-radius:18px; border:none;
+  background:linear-gradient(180deg,#3DDC5A,#28B64A); color:#fff;
+  font-size:clamp(30px,3.2vw,48px); font-weight:bold; letter-spacing:3px;
+  box-shadow:0 6px 20px rgba(50,205,50,.4); cursor:pointer; white-space:nowrap;
+  font-family:inherit;
+}
+.signup-btn:hover { filter:brightness(1.08); transform:translateY(-1px); }
+body[data-theme="抖音红焰版"] .signup-btn {
+  background:rgba(50,205,50,.35); border:2px solid #4DE36B; box-shadow:0 6px 20px rgba(0,0,0,.25);
+}
+.disp-rules { flex:1; font-size:clamp(28px,2.8vw,42px); color:#e8d9b0; line-height:1.6; letter-spacing:1px; }
+.disp-rules .rt { color:var(--gold); margin-right:.5vw; }
+.disp-deadline { text-align:right; font-size:clamp(28px,2.8vw,42px); color:var(--muted); white-space:nowrap; }
+.disp-deadline b { color:var(--accent2); font-family:var(--font-num); }
+.disp-disclaimer {
+  text-align:center; font-size:clamp(24px,2.2vw,36px); color:var(--muted);
+  letter-spacing:2px; padding:.4vh 0;
+}
+
+/* 大屏悬浮控制 */
+.disp-ctrl {
+  position:fixed; right:1.2vw; top:50%; transform:translateY(-50%);
+  display:flex; flex-direction:column; gap:10px; z-index:60; opacity:.5; transition:opacity .2s;
+}
+.disp-ctrl:hover { opacity:1; }
+.disp-ctrl button {
+  width:64px; height:64px; border-radius:50%; font-size:26px;
+  background:rgba(0,0,0,.55); border:1px solid var(--line); color:#fff; cursor:pointer;
+}
+.disp-ctrl button:hover { border-color:var(--gold); }
+.disp-ctrl button.exit-btn {
+  background:rgba(199,30,31,.75); border-color:rgba(255,120,120,.6);
+  box-shadow:0 0 14px rgba(255,60,60,.5);
+}
+.disp-ctrl button.exit-btn:hover { background:rgba(230,40,40,.9); }
+
+/* 大屏右上角常驻「取消/退出」按钮（投屏也可见，方便随时退出） */
+.disp-exit {
+  position:fixed; top:1.6vh; right:1.6vw; z-index:70;
+  display:flex; align-items:center; gap:8px;
+  padding:.7vh 1.2vw; border-radius:999px; cursor:pointer;
+  background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.25);
+  color:#fff; font-size:clamp(22px,2vw,30px); letter-spacing:1px;
+  backdrop-filter:blur(8px); transition:all .2s; white-space:nowrap;
+}
+.disp-exit:hover { background:rgba(199,30,31,.85); border-color:rgba(255,120,120,.7); box-shadow:0 0 16px rgba(255,60,60,.5); }
+.disp-exit .x { font-size:1.2em; font-weight:bold; }
+
+
+/* ============ 精品俱乐部版（黑金·扑克休闲厅）============ */
+body[data-theme="精品俱乐部版"] {
+  --bg1:#0C0A08; --bg2:#040404;
+  --card:rgba(255,255,255,.045); --line:rgba(201,169,106,.30);
+  --gold:#C9A96A; --accent:#C9A96A; --accent2:#8E2230;
+  --muted:#93897A; --text:#F5EFE2;
+  --timer-glow:rgba(201,169,106,.28);
+  background:
+    radial-gradient(1400px 700px at 50% -12%, rgba(142,34,48,.10), transparent 60%),
+    linear-gradient(180deg,#0E0C09 0%,#050505 100%);
+}
+body[data-theme="精品俱乐部版"] #display { /* fixed 铺满全屏，作为纹理/边框定位父容器 */ }
+/* 花色纹理背景：♠♥♦♣ 极淡金色/暗红 */
+body[data-theme="精品俱乐部版"] #display::before {
+  content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Ctext x='18' y='58' font-size='52' fill='%23C9A96A' opacity='0.055'%3E%E2%99%A0%3C/text%3E%3Ctext x='148' y='118' font-size='52' fill='%238E2230' opacity='0.075'%3E%E2%99%A5%3C/text%3E%3Ctext x='38' y='198' font-size='52' fill='%238E2230' opacity='0.06'%3E%E2%99%A6%3C/text%3E%3Ctext x='168' y='248' font-size='52' fill='%23C9A96A' opacity='0.05'%3E%E2%99%A3%3C/text%3E%3C/svg%3E");
+  background-size:26vw 26vw;
+}
+/* 香槟金细边框 + 四角装饰 */
+body[data-theme="精品俱乐部版"] #display::after {
+  content:''; position:absolute; inset:1.4vh 1.2vw; z-index:0; pointer-events:none;
+  border:1px solid rgba(201,169,106,.22); border-radius:10px;
+}
+body[data-theme="精品俱乐部版"] .disp-top,
+body[data-theme="精品俱乐部版"] .disp-body,
+body[data-theme="精品俱乐部版"] .disp-disclaimer { position:relative; z-index:1; }
+/* 纯展示布局：只留 盲注+倒计时+下一级 */
+body[data-theme="精品俱乐部版"] .disp-body { grid-template-columns:1fr; grid-template-rows:1fr; }
+body[data-theme="精品俱乐部版"] .side-col,
+body[data-theme="精品俱乐部版"] .player-hud,
+body[data-theme="精品俱乐部版"] .disp-bottom,
+body[data-theme="精品俱乐部版"] .chip-deco,
+body[data-theme="精品俱乐部版"] .sweep,
+body[data-theme="精品俱乐部版"] .level-badge,
+body[data-theme="精品俱乐部版"] .level-ring,
+body[data-theme="精品俱乐部版"] .timer-core,
+body[data-theme="精品俱乐部版"] .ante-line { display:none !important; }
+/* 中央网格：倒计时 | 盲注居中（时间正下方）| NEXT LEVEL */
+body[data-theme="精品俱乐部版"] .center-col {
+  display:grid; width:100%; max-width:92vw; margin:0 auto;
+  grid-template-columns:1fr;
+  grid-template-rows:auto auto auto auto auto;
+  grid-template-areas:"round" "timer" "break" "sb-bb" "next";
+  align-items:center; align-content:center; justify-items:center;
+  row-gap:1.4vh; height:100%;
+}
+body[data-theme="精品俱乐部版"] .break-banner { grid-area:break; }
+body[data-theme="精品俱乐部版"] .round-line {
+  grid-area:round;
+  font-size:clamp(34px,4.2vw,60px); letter-spacing:6px;
+  color:#E8CD96; font-weight:800;
+  text-shadow:0 0 24px rgba(232,205,150,.55), 0 2px 4px rgba(0,0,0,.7);
+  margin:0;
+}
+body[data-theme="精品俱乐部版"] .blinds-row {
+  grid-area:sb-bb; display:flex; gap:3vw; justify-content:center; align-items:stretch;
+}
+body[data-theme="精品俱乐部版"] .timer {
+  grid-area:timer;
+  font-size:clamp(140px,24vw,420px); letter-spacing:4px; line-height:.9;
+  background:linear-gradient(180deg,#FFFFFF 0%,#F5E3B8 48%,#D8BC82 100%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  color:#F5E3B8;
+  filter:drop-shadow(0 0 16px rgba(232,205,150,.40)) drop-shadow(0 0 60px rgba(201,169,106,.22)) drop-shadow(0 3px 5px rgba(0,0,0,.75));
+}
+body[data-theme="精品俱乐部版"] .timer.break-mode { color:#E8CD96; text-shadow:0 0 20px rgba(232,205,150,.55), 0 0 60px rgba(142,34,48,.45); }
+/* 深灰玻璃盲注牌 + 香槟金发丝线（SB 金 / BB 暖红） */
+body[data-theme="精品俱乐部版"] .blind-block {
+  min-width:15vw; padding:3vh 2.6vw; text-align:center;
+  background:linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+  backdrop-filter:blur(14px);
+  border:1px solid rgba(201,169,106,.32); border-radius:16px;
+  box-shadow:0 18px 50px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
+  position:relative;
+}
+body[data-theme="精品俱乐部版"] .blind-block::before {
+  content:''; position:absolute; top:0; left:18%; right:18%; height:2px;
+  background:linear-gradient(90deg, transparent, #D8BC82, transparent);
+}
+body[data-theme="精品俱乐部版"] .blind-block .lbl {
+  color:#C9A96A; letter-spacing:5px; font-weight:600;
+}
+body[data-theme="精品俱乐部版"] .blind-block:first-child .lbl::after { content:' ♠'; color:#C9A96A; }
+body[data-theme="精品俱乐部版"] .blind-block:last-child .lbl::after { content:' ♥'; color:#D9555F; }
+body[data-theme="精品俱乐部版"] .blind-block .num { color:#F5E3B8; font-size:clamp(76px,9.5vw,160px); text-shadow:0 0 20px rgba(232,205,150,.40), 0 2px 4px rgba(0,0,0,.7); }
+body[data-theme="精品俱乐部版"] .blind-block.hl { border-color:rgba(217,85,95,.55); box-shadow:0 18px 50px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08), 0 0 34px rgba(142,34,48,.20); }
+body[data-theme="精品俱乐部版"] .blind-block.hl::before { background:linear-gradient(90deg, transparent, #D9555F, transparent); }
+body[data-theme="精品俱乐部版"] .blind-block.hl .num { color:#FFB3B8; font-size:clamp(76px,9.5vw,160px); text-shadow:0 0 22px rgba(217,85,95,.55), 0 2px 4px rgba(0,0,0,.7); }
+/* 底部 NEXT LEVEL */
+body[data-theme="精品俱乐部版"] .next-line {
+  grid-area:next; justify-self:center; margin-top:1vh;
+  display:flex; align-items:baseline; gap:1.2vw;
+  padding:1.6vh 3.4vw; border:1px solid rgba(201,169,106,.25); border-radius:999px;
+  background:linear-gradient(90deg, rgba(201,169,106,.08), rgba(142,34,48,.08));
+  font-size:clamp(44px,5.4vw,84px);
+}
+body[data-theme="精品俱乐部版"] .next-line .lbl { color:#C9A96A; }
+body[data-theme="精品俱乐部版"] .next-line .val { color:#E8CD96; text-shadow:0 0 16px rgba(232,205,150,.35); font-family:var(--font-num); }
+/* 标题金色调暗、更沉稳 */
+body[data-theme="精品俱乐部版"] .title-wrap .venue {
+  background:linear-gradient(90deg,#8f8676,#E8CD96,#8f8676);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+body[data-theme="精品俱乐部版"] .title-wrap .tname { color:#F5EFE2; text-shadow:0 0 26px rgba(201,169,106,.25); letter-spacing:8px; }
+body[data-theme="精品俱乐部版"] .disp-top .liveclock { color:#8f8676; }
+body[data-theme="精品俱乐部版"] .disp-disclaimer { color:#6E6656; }
+
+/* 超大时钟模式：隐藏侧栏 */
+body[data-layout="giant"] .disp-body { grid-template-columns:1fr; }
+body[data-layout="giant"] .side-col { display:none; }
+body[data-layout="giant"] .timer { font-size:clamp(110px,26vw,320px); }
+
+/* ============ 潮流筹码装饰 ============ */
+.chip-deco {
+  position:absolute; bottom:2vh; z-index:2; pointer-events:none;
+  display:flex; align-items:flex-end; gap:.6vw;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.55));
+}
+.chip-deco.left { left:2vw; }
+.chip-deco.right { right:2vw; transform:scaleX(-1); }
+.chip {
+  position:relative; border-radius:50%;
+  background:
+    repeating-conic-gradient(var(--c1) 0deg 22deg, var(--c2) 22deg 45deg);
+  box-shadow:inset 0 0 0 .35vmin var(--c2), inset 0 0 1.2vmin rgba(0,0,0,.5), 0 .4vmin 1vmin rgba(0,0,0,.4);
+  animation:bob 3.6s ease-in-out infinite;
+}
+.chip::after {
+  content:attr(data-suit);
+  position:absolute; inset:22%; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.28), transparent 60%), var(--c2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:45%; color:rgba(255,255,255,.92); font-weight:bold;
+  box-shadow:inset 0 0 .6vmin rgba(0,0,0,.45);
+}
+.chip.c1 { width:5.2vmin; height:5.2vmin; --c1:#e8352e; --c2:#8f1410; animation-delay:0s; }
+.chip.c2 { width:4.2vmin; height:4.2vmin; --c1:#2ea8ff; --c2:#0b4f86; animation-delay:.5s; margin-bottom:1.2vmin; }
+.chip.c3 { width:6vmin; height:6vmin; --c1:#37d67a; --c2:#0d6b38; animation-delay:1s; }
+.chip.c4 { width:4.6vmin; height:4.6vmin; --c1:#7a4dff; --c2:#33157f; animation-delay:1.5s; margin-bottom:2vmin; }
+.chip.c5 { width:3.8vmin; height:3.8vmin; --c1:#ffb020; --c2:#8a5200; animation-delay:2s; margin-bottom:.6vmin; }
+@keyframes bob {
+  0%,100% { transform:translateY(0) rotate(-4deg); }
+  50% { transform:translateY(-1.2vmin) rotate(5deg); }
+}
+/* 潮流光带扫过 */
+#display .sweep {
+  position:absolute; top:-20%; left:-30%; width:60%; height:140%; z-index:0; pointer-events:none;
+  background:linear-gradient(105deg, transparent 40%, color-mix(in srgb,var(--accent) 10%,transparent) 50%, transparent 60%);
+  transform:rotate(8deg);
+  animation:sweep 9s linear infinite;
+}
+@keyframes sweep {
+  0% { left:-40%; }
+  60%,100% { left:130%; }
+}
+</style>
+</head>
+<body data-theme="未来竞技场" data-layout="standard">
+
+<!-- ================= 控制台 ================= -->
+<div id="console">
+  <div class="console-head">
+    <div class="logo">POKER TOURNAMENT</div>
+    <h1>🃏 德州扑克赛事投屏计时系统</h1>
+    <p>竞技赛事计时 · 全屏投屏 · 多主题 · 盲注自动升级</p>
+  </div>
+
+  <div class="top-actions">
+    <select id="theme-sel" onchange="setTheme(this.value)">
+      <option>精品俱乐部版</option>
+      <option>未来竞技场</option>
+      <option>电竞青蓝版</option>
+      <option>抖音紫焰版</option>
+      <option>抖音红焰版</option>
+      <option>专业版</option>
+      <option>暗金奢华版</option>
+      <option>霓虹夜店版</option>
+      <option>普通版</option>
+      <option>简约版</option>
+      <option>钢铁侠版</option>
+      <option>极光潮流版</option>
+    </select>
+    <select id="layout-sel" onchange="setLayout(this.value)">
+      <option value="standard">标准三栏布局</option>
+      <option value="giant">超大时钟模式</option>
+    </select>
+    <button class="btn-blue btn-big" onclick="enterDisplay()">📺 全屏投屏</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="setup">🎛 赛事设置</button>
+    <button class="tab-btn" data-tab="clock">⏱ 比赛时钟</button>
+    <button class="tab-btn" data-tab="schedule">📋 盲注进程</button>
+    <button class="tab-btn" data-tab="blinds">⚙️ 盲注设置</button>
+    <button class="tab-btn" data-tab="buyin">👥 买入管理</button>
+    <button class="tab-btn" data-tab="history">📜 赛事记录</button>
+  </div>
+
+  <!-- 赛事设置 -->
+  <div class="panel active" id="panel-setup">
+    <div class="card">
+      <h2><span class="dot">●</span>基本信息</h2>
+      <div class="row">
+        <input id="t-name" placeholder="赛事名称，如：8月26日夜间赛" style="flex:1;min-width:180px">
+        <input id="t-venue" placeholder="场馆名称，如：XX酒馆【北海第五分店】" style="flex:1;min-width:200px">
+      </div>
+      <div class="row" style="margin-top:12px">
+        <input id="t-stack" type="number" value="20000" style="width:120px" title="起始筹码"><span class="muted">起始筹码</span>
+        <input id="t-prize" type="number" value="0" style="width:140px" title="奖池"><span class="muted">奖池</span>
+        <input id="t-itm" type="number" value="1" style="width:90px" title="获奖人数"><span class="muted">获奖人数(ITM)</span>
+        <input id="t-maxplayers" type="number" value="0" style="width:110px" title="预设参赛人数"><span class="muted">预设参赛人数(0=自动)</span>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn-gold" onclick="createTournament()">🎬 开赛</button>
+        <button class="btn-red" onclick="endTournament()">🏁 结束本场</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot">●</span>比赛规则（投屏显示）</h2>
+      <textarea id="t-rules" rows="3" placeholder="每行一条规则，如：&#10;比赛中禁止通电话&#10;吸烟、牌桌上禁止饮酒">比赛中禁止通电话
+吸烟、牌桌上禁止饮酒
+报名截止后不再接受新报名</textarea>
+      <div class="muted" style="margin-top:8px">每行一条，将滚动显示在投屏大屏底部</div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot">●</span>休息 &amp; 报名截止</h2>
+      <div class="row">
+        <input id="t-break-min" type="number" value="10" style="width:100px"><span class="muted">休息时长(分钟)</span>
+        <button class="btn-blue" onclick="startBreak()">☕ 开始休息</button>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <input id="t-deadline-min" type="number" value="90" style="width:100px"><span class="muted">报名截止倒计时(分钟)</span>
+        <button class="btn-green" onclick="setDeadline()">⏳ 设定报名截止</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 比赛时钟控制 -->
+  <div class="panel" id="panel-clock">
+    <div class="card">
+      <div class="row between" style="margin-bottom:12px">
+        <h2 style="margin-bottom:0"><span class="dot">●</span>时钟控制</h2>
+        <span class="muted" id="c-name-line">未创建比赛</span>
+      </div>
+      <div class="row">
+        <button class="btn-gold btn-big" id="btn-start" onclick="toggleClock()">▶ 开始比赛</button>
+        <button class="btn-green btn-big" onclick="prevLevel()">⏮ 上一级</button>
+        <button class="btn-green btn-big" onclick="nextLevel()">⏭ 下一级</button>
+        <button class="btn-blue btn-big" onclick="startBreak()">☕ 休息</button>
+        <button class="btn-red btn-big" onclick="resetTournament()">⟲ 重置</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="num" id="c-players">0</div><div class="lbl">剩余人数</div></div>
+        <div class="stat-box"><div class="num" id="c-entries">0</div><div class="lbl">总买入</div></div>
+        <div class="stat-box"><div class="num" id="c-chips">0</div><div class="lbl">总筹码</div></div>
+        <div class="stat-box"><div class="num" id="c-avg">0</div><div class="lbl">平均筹码</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 盲注进程 -->
+  <div class="panel" id="panel-schedule">
+    <div class="card">
+      <h2><span class="dot">●</span>盲注升级进程</h2>
+      <table id="schedule-table">
+        <thead><tr><th>级别</th><th>小盲</th><th>大盲</th><th>ANTE</th><th>时长</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 盲注设置 -->
+  <div class="panel" id="panel-blinds">
+    <div class="card">
+      <div class="row between" style="margin-bottom:12px">
+        <h2 style="margin-bottom:0"><span class="dot">●</span>盲注升级表（可修改）</h2>
+        <div class="row">
+          <button class="btn-green btn-mini" onclick="addLevel()">➕ 加一级</button>
+          <button class="btn-gold btn-mini" onclick="saveSchedule()">💾 保存</button>
+          <button class="btn-red btn-mini" onclick="resetSchedule()">恢复默认</button>
+        </div>
+      </div>
+      <table id="edit-schedule-table">
+        <thead><tr><th>级别</th><th>小盲</th><th>大盲</th><th>ANTE</th><th>分钟</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="muted" style="margin-top:10px">改完点「保存」生效；正在进行的比赛会从当前级别继续。</div>
+    </div>
+  </div>
+
+  <!-- 买入管理 -->
+  <div class="panel" id="panel-buyin">
+    <div class="card">
+      <h2><span class="dot">●</span>买入 / 复活</h2>
+      <div class="row" style="margin-bottom:12px">
+        <select id="pick-player" style="flex:1;min-width:160px"></select>
+        <button class="btn-green" onclick="addEntry()">💰 记买入</button>
+        <button class="btn-green" onclick="addRebuy()">🔁 记复活</button>
+      </div>
+      <table id="entries-table">
+        <thead><tr><th>玩家</th><th>买入</th><th>复活</th><th>筹码</th><th>操作</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot">●</span>快速添加会员</h2>
+      <div class="row">
+        <input id="player-name" placeholder="姓名 / 昵称" style="flex:1;min-width:140px">
+        <button class="btn-gold" onclick="addPlayer()">添加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 赛事记录 -->
+  <div class="panel" id="panel-history">
+    <div class="card">
+      <h2><span class="dot">●</span>已完成赛事</h2>
+      <div id="history-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 全屏投屏大屏 ================= -->
+<div id="display">
+  <div class="brand-wing left"></div>
+  <div class="brand-wing right"></div>
+  <div class="disp-top">
+    <div class="liveclock" id="d-liveclock">--:--:--</div>
+    <div class="title-wrap">
+      <div class="energy-line"></div>
+      <div class="venue" id="d-venue">——</div>
+      <div class="tname" id="d-name">德州扑克锦标赛</div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="disp-body">
+    <!-- 左栏 -->
+    <div class="side-col">
+      <div class="info-block hl"><div class="lbl">当前级别</div><div class="val acc" id="d-level">1</div></div>
+      <div class="info-block"><div class="lbl">参赛人数</div><div class="val" id="d-total">0</div></div>
+      <div class="info-block"><div class="lbl">剩余人数</div><div class="val gold" id="d-alive">0</div></div>
+      <div class="info-block"><div class="lbl">桌台编号</div><div class="val acc table-block" id="d-table">TABLE 01</div></div>
+      <div class="info-block"><div class="lbl">获奖人数</div><div class="val" id="d-itm">1</div></div>
+    </div>
+
+    <!-- 中栏 -->
+    <div class="center-col">
+      <div class="round-line" id="d-round">ROUND 1</div>
+      <div class="level-badge" id="d-level-badge">LEVEL 1</div>
+      <div class="level-ring" id="d-ring"><div class="ring-inner"><div class="ring-lbl">LEVEL</div><div class="ring-num" id="d-ring-num">1</div></div></div>
+      <div class="timer-core"></div>
+      <div class="timer" id="d-timer">20:00</div>
+      <div class="break-banner" id="d-break-banner">
+        <div class="bb-title">休息时间</div>
+        <div class="bb-sub">休息结束暂停买入</div>
+      </div>
+      <div class="blinds-row">
+        <div class="blind-block">
+          <div class="lbl">SMALL BLIND</div>
+          <div class="num" id="d-sb">100</div>
+        </div>
+        <div class="blind-block hl">
+          <div class="lbl">BIG BLIND</div>
+          <div class="num" id="d-bb">200</div>
+        </div>
+      </div>
+      <div class="ante-line">ANTE <b id="d-ante">0</b></div>
+      <div class="next-line"><span class="lbl">NEXT LEVEL</span><span class="val" id="d-next">200 / 400</span></div>
+    </div>
+
+    <!-- 右栏 -->
+    <div class="side-col">
+      <div class="info-block"><div class="lbl">赛局总时间</div><div class="val" id="d-elapsed">0:00:00</div></div>
+      <div class="info-block"><div class="lbl">总积分</div><div class="val" id="d-chips">0</div></div>
+      <div class="info-block"><div class="lbl">平均计分</div><div class="val" id="d-avg">0</div></div>
+      <div class="info-block"><div class="lbl">下局休息</div><div class="val acc" id="d-break">--:--</div></div>
+      <div class="info-block hl"><div class="lbl">奖池</div><div class="val gold" id="d-prize">0</div></div>
+    </div>
+  </div>
+
+  <div class="player-hud" id="d-players">
+    <div class="ph-title">PLAYERS</div>
+    <div class="ph-list" id="d-players-list"></div>
+  </div>
+
+  <div class="disp-bottom">
+    <div class="disp-rules" id="d-rules"></div>
+    <div class="disp-deadline">
+      <button class="signup-btn" onclick="toast('请在控制台「买入管理」登记选手')">接受报名</button>
+      <div style="margin-top:.9vh">截止报名 <b id="d-deadline">--:--:--</b></div>
+    </div>
+  </div>
+  <!-- 潮流筹码装饰 -->
+  <div class="chip-deco left">
+    <div class="chip c1" data-suit="♠"></div>
+    <div class="chip c2" data-suit="♥"></div>
+    <div class="chip c3" data-suit="♦"></div>
+    <div class="chip c4" data-suit="♣"></div>
+    <div class="chip c5" data-suit="$"></div>
+  </div>
+  <div class="chip-deco right">
+    <div class="chip c1" data-suit="♠"></div>
+    <div class="chip c2" data-suit="♥"></div>
+    <div class="chip c3" data-suit="♦"></div>
+    <div class="chip c4" data-suit="♣"></div>
+    <div class="chip c5" data-suit="$"></div>
+  </div>
+  <div class="sweep"></div>
+
+  <div class="disp-disclaimer">⚠️ 比赛计时器 · 竞技赛事专用 · 禁止赌博 无不良引导</div>
+</div>
+
+<!-- 大屏右上角常驻退出按钮（投屏也可见） -->
+<div class="disp-exit" id="disp-exit" onclick="exitDisplay()" title="退出投屏">
+  <span class="x">✕</span><span>取消 / 退出</span>
+</div>
+
+<!-- 大屏悬浮控制 -->
+<div class="disp-ctrl" id="disp-ctrl">
+  <button title="开始/暂停" onclick="toggleClock()">▶</button>
+  <button title="上一级" onclick="prevLevel()">⏮</button>
+  <button title="下一级" onclick="nextLevel()">⏭</button>
+  <button title="休息" onclick="startBreak()">☕</button>
+  <button title="退出投屏" onclick="exitDisplay()">✕</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ================= 数据 =================
+const DB_KEY = 'poker_timer_db_v2';
+const SCHED_KEY = 'poker_timer_sched_v2';
+const THEME_KEY = 'poker_timer_theme';
+const LAYOUT_KEY = 'poker_timer_layout';
+
+let db = { players: [], tourneys: [], currentId: null };
+
+const DEFAULT_SCHEDULE = [
+  { sb:100, bb:200, ante:0, min:20 },
+  { sb:200, bb:400, ante:0, min:20 },
+  { sb:400, bb:800, ante:0, min:20 },
+  { sb:800, bb:1600, ante:0, min:20 },
+  { sb:1000, bb:2000, ante:200, min:20 },
+  { sb:2000, bb:4000, ante:400, min:20 },
+  { sb:4000, bb:8000, ante:800, min:20 },
+  { sb:6000, bb:12000, ante:1200, min:20 },
+  { sb:8000, bb:16000, ante:1600, min:20 },
+  { sb:10000, bb:20000, ante:2000, min:20 },
+  { sb:15000, bb:30000, ante:3000, min:20 },
+  { sb:20000, bb:40000, ante:4000, min:20 },
+  { sb:30000, bb:60000, ante:6000, min:20 },
+  { sb:50000, bb:100000, ante:10000, min:20 }
+];
+let schedule = JSON.parse(localStorage.getItem(SCHED_KEY)) || JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+
+function load() { try { db = JSON.parse(localStorage.getItem(DB_KEY)) || db; } catch(e){} }
+function save() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+function saveSchedule() { localStorage.setItem(SCHED_KEY, JSON.stringify(schedule)); }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+function fmtTime(ts) {
+  const d = new Date(ts), p = n => String(n).padStart(2,'0');
+  return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function cur() { return db.tourneys.find(t => t.id === db.currentId) || null; }
+function hms(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+  const p = n => String(n).padStart(2,'0');
+  return `${p(h)}:${p(m)}:${p(s)}`;
+}
+function mmss(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const m = Math.floor(sec/60), s = sec%60;
+  const p = n => String(n).padStart(2,'0');
+  return `${p(m)}:${p(s)}`;
+}
+
+// ================= 时钟状态 =================
+let clock = { running:false, levelIdx:0, remainSec:schedule[0].min*60, elapsedSec:0, onBreak:false, breakRemain:0, deadline:0, pendingAdvance:false };
+let timerHandle = null;
+
+function toggleClock() {
+  const t = cur();
+  if (!t) return toast('请先开赛');
+  if (clock.onBreak) { clock.onBreak = false; clock.pendingAdvance = false; }   // 开始比赛时退出休息
+  clock.running = !clock.running;
+  if (clock.running) startTick(); else stopTick();
+  renderAll();
+}
+function stopTick() { if (timerHandle) { clearInterval(timerHandle); timerHandle = null; } }
+function startTick() {
+  stopTick();
+  timerHandle = setInterval(() => {
+    // 报名截止倒计时
+    if (clock.deadline > 0) clock.deadline--;
+    // 休息倒计时
+    if (clock.onBreak) {
+      if (clock.breakRemain > 0) clock.breakRemain--;
+      else {
+        clock.onBreak = false;
+        playAlarm();
+        // 中场休息结束后自动升到下一级（第7轮）并继续计时
+        if (clock.pendingAdvance) {
+          clock.pendingAdvance = false;
+          if (clock.levelIdx < schedule.length - 1) {
+            clock.levelIdx++;
+            clock.remainSec = schedule[clock.levelIdx].min * 60;
+            clock.running = true;
+            toast(`⏫ 升盲：${schedule[clock.levelIdx].sb.toLocaleString()} / ${schedule[clock.levelIdx].bb.toLocaleString()}`);
+          } else {
+            clock.remainSec = schedule[schedule.length - 1].min * 60;
+            clock.running = true;
+            toast('已到最后一级，保持当前盲注');
+          }
+        } else {
+          toast('休息结束');
+        }
+        persistClock();
+      }
+      renderClock(); renderDisplay();
+      return;
+    }
+    // 比赛计时
+    if (clock.running) {
+      clock.elapsedSec++;
+      clock.remainSec--;
+      if (clock.remainSec <= 0) advanceLevel(false);
+    }
+    renderClock(); renderDisplay();
+  }, 1000);
+}
+
+function advanceLevel(manual) {
+  const last = schedule.length - 1;
+  // 自动中场休息：第6轮（levelIdx=5）时间走完，准备进入第7轮（levelIdx=6）前，强制休息10分钟
+  if (!manual && clock.levelIdx === 5) {
+    clock.pendingAdvance = true;
+    clock.onBreak = true;
+    clock.breakRemain = 10 * 60;
+    clock.running = false;
+    playAlarm();
+    toast('☕ 中场休息 10 分钟');
+    persistClock();
+    return;
+  }
+  if (clock.levelIdx >= last) {
+    clock.remainSec = schedule[last].min * 60;
+    if (!manual) playAlarm();
+    toast('已到最后一级，保持当前盲注');
+  } else {
+    clock.levelIdx++;
+    clock.remainSec = schedule[clock.levelIdx].min * 60;
+    playAlarm();
+    toast(`⏫ 升盲：${schedule[clock.levelIdx].sb.toLocaleString()} / ${schedule[clock.levelIdx].bb.toLocaleString()}`);
+  }
+  persistClock();
+}
+function nextLevel() { if (!cur()) return toast('请先开赛'); advanceLevel(true); renderAll(); }
+function prevLevel() {
+  if (!cur()) return toast('请先开赛');
+  if (clock.levelIdx > 0) clock.levelIdx--;
+  clock.remainSec = schedule[clock.levelIdx].min * 60;
+  persistClock(); renderAll();
+}
+function resetTournament() {
+  if (!confirm('重置时钟到第 1 级？（不清除买入记录）')) return;
+  clock.running = false; stopTick();
+  clock.levelIdx = 0; clock.remainSec = schedule[0].min * 60;
+  clock.elapsedSec = 0; clock.onBreak = false; clock.breakRemain = 0; clock.pendingAdvance = false;
+  persistClock(); renderAll();
+}
+function startBreak() {
+  const t = cur(); if (!t) return toast('请先开赛');
+  const min = Number(document.getElementById('t-break-min').value) || 10;
+  clock.onBreak = true; clock.breakRemain = min * 60; clock.running = false;
+  if (!timerHandle) startTick();
+  renderAll(); toast(`☕ 休息 ${min} 分钟`);
+}
+function setDeadline() {
+  const t = cur(); if (!t) return toast('请先开赛');
+  const min = Number(document.getElementById('t-deadline-min').value) || 90;
+  clock.deadline = min * 60;
+  if (!timerHandle) startTick();
+  renderAll(); toast(`⏳ 报名截止倒计时 ${min} 分钟`);
+}
+function persistClock() {
+  const t = cur();
+  if (t) { t.clock = { levelIdx:clock.levelIdx, remainSec:clock.remainSec, elapsedSec:clock.elapsedSec, onBreak:clock.onBreak, breakRemain:clock.breakRemain, pendingAdvance:clock.pendingAdvance }; save(); }
+}
+
+function playAlarm() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0,0.25,0.5].forEach(delay => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type='sine'; o.frequency.value=880;
+      g.gain.setValueAtTime(0.4, ctx.currentTime+delay);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+0.2);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime+delay); o.stop(ctx.currentTime+delay+0.22);
+    });
+  } catch(e){}
+}
+
+// ================= 比赛 / 买入 =================
+function createTournament() {
+  if (cur()) return toast('已有一场进行中的比赛');
+  const name = document.getElementById('t-name').value.trim() || ('锦标赛 ' + fmtTime(Date.now()));
+  const venue = document.getElementById('t-venue').value.trim() || '——';
+  const stack = Number(document.getElementById('t-stack').value) || 20000;
+  const prize = Number(document.getElementById('t-prize').value) || 0;
+  const itm = Number(document.getElementById('t-itm').value) || 1;
+  const maxP = Number(document.getElementById('t-maxplayers').value) || 0;
+  const rules = document.getElementById('t-rules').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const t = {
+    id: Date.now()+'', name, venue, startStack:stack, prizePool:prize, itmCount:itm, maxPlayers:maxP,
+    rules, status:'ongoing', entries:[], createdAt:Date.now(), finishedAt:null,
+    clock:{ levelIdx:0, remainSec:schedule[0].min*60, elapsedSec:0 }
+  };
+  db.tourneys.push(t);
+  db.currentId = t.id;
+  clock = { running:false, levelIdx:0, remainSec:schedule[0].min*60, elapsedSec:0, onBreak:false, breakRemain:0, deadline:0, pendingAdvance:false };
+  save(); renderAll();
+  toast('🎬 比赛已创建，点「全屏投屏」开始');
+}
+function endTournament() {
+  const t = cur(); if (!t) return toast('没有进行中的比赛');
+  if (!confirm('结束本场比赛？将归档到赛事记录')) return;
+  clock.running = false; stopTick();
+  t.status='finished'; t.finishedAt=Date.now();
+  db.currentId=null;
+  save(); renderAll(); switchTab('history');
+  toast('赛事已归档');
+}
+function addPlayer() {
+  const el = document.getElementById('player-name');
+  const name = el.value.trim();
+  if (!name) return toast('请输入昵称');
+  if (db.players.some(p => p.name === name)) return toast('该会员已存在');
+  db.players.push({ id: Date.now()+''+Math.floor(Math.random()*999), name });
+  el.value=''; save(); renderAll();
+}
+function addEntry() {
+  const t = cur(); if (!t) return toast('请先开赛');
+  const pid = document.getElementById('pick-player').value;
+  if (!pid) return toast('请选择会员');
+  const p = db.players.find(x => x.id === pid);
+  let e = t.entries.find(x => x.playerId === pid);
+  if (e) { e.chips = t.startStack; e.buyIns += 1; }
+  else t.entries.push({ playerId:pid, name:p.name, buyIns:1, rebuys:0, chips:t.startStack });
+  save(); renderAll(); toast(`${p.name} 买入，筹码 ${t.startStack.toLocaleString()}`);
+}
+function addRebuy() {
+  const t = cur(); if (!t) return toast('请先开赛');
+  const pid = document.getElementById('pick-player').value;
+  if (!pid) return toast('请选择会员');
+  const p = db.players.find(x => x.id === pid);
+  let e = t.entries.find(x => x.playerId === pid);
+  if (!e) { e = { playerId:pid, name:p.name, buyIns:0, rebuys:0, chips:0 }; t.entries.push(e); }
+  e.rebuys += 1; e.chips += t.startStack;
+  save(); renderAll(); toast(`${p.name} 复活，+${t.startStack.toLocaleString()} 筹码`);
+}
+function bustPlayer(pid) {
+  const t = cur(); if (!t) return;
+  const e = t.entries.find(x => x.playerId === pid);
+  if (!confirm(`确认「${e.name}」被淘汰（筹码清零）？`)) return;
+  e.chips = 0; save(); renderAll();
+}
+function removeEntry(pid) {
+  const t = cur(); if (!t) return;
+  const e = t.entries.find(x => x.playerId === pid);
+  if (!confirm(`移除「${e.name}」的记录？`)) return;
+  t.entries = t.entries.filter(x => x.playerId !== pid);
+  save(); renderAll();
+}
+
+// ================= 主题 & 布局 =================
+function setTheme(name) {
+  document.body.dataset.theme = name;
+  localStorage.setItem(THEME_KEY, name);
+  renderDisplay();
+}
+function setLayout(v) {
+  document.body.dataset.layout = v;
+  localStorage.setItem(LAYOUT_KEY, v);
+}
+
+// ================= 投屏 =================
+function enterDisplay() {
+  document.getElementById('console').style.display = 'none';
+  const d = document.getElementById('display');
+  d.classList.add('active');
+  document.getElementById('disp-ctrl').style.display = 'flex';
+  document.getElementById('disp-exit').style.display = 'flex';
+  renderDisplay();
+  // 尝试进入浏览器全屏
+  const el = document.documentElement;
+  if (el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+}
+function exitDisplay() {
+  const d = document.getElementById('display');
+  d.classList.remove('active');
+  document.getElementById('disp-ctrl').style.display = 'none';
+  document.getElementById('disp-exit').style.display = 'none';
+  document.getElementById('console').style.display = '';
+  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+}
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) {
+    // 用户按 ESC 退出全屏，但保留大屏显示（仍是投屏视图，只是窗口化）
+  }
+});
+
+// ================= 渲染 =================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.onclick = () => switchTab(btn.dataset.tab);
+});
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
+  renderAll();
+}
+function renderAll() { renderClock(); renderScheduleView(); renderScheduleEdit(); renderBuyin(); renderHistory(); renderDisplay(); }
+
+function renderClock() {
+  const lv = schedule[Math.min(clock.levelIdx, schedule.length-1)];
+  const t = cur();
+  document.getElementById('c-name-line').textContent = t ? t.name : '未创建比赛';
+  const btn = document.getElementById('btn-start');
+  btn.textContent = clock.onBreak ? '☕ 休息中' : (clock.running ? '⏸ 暂停' : '▶ 开始比赛');
+  if (t) {
+    const alive = t.entries.filter(e => e.chips > 0);
+    const totalChips = t.entries.reduce((s,e)=>s+e.chips,0);
+    const totalEntries = t.entries.reduce((s,e)=>s+e.buyIns+e.rebuys,0);
+    document.getElementById('c-players').textContent = alive.length;
+    document.getElementById('c-entries').textContent = totalEntries;
+    document.getElementById('c-chips').textContent = totalChips.toLocaleString();
+    document.getElementById('c-avg').textContent = alive.length ? Math.round(totalChips/alive.length).toLocaleString() : 0;
+  } else {
+    ['c-players','c-entries','c-chips','c-avg'].forEach(id => document.getElementById(id).textContent = '0');
+  }
+}
+
+function renderDisplay() {
+  const lv = schedule[Math.min(clock.levelIdx, schedule.length-1)];
+  const t = cur();
+
+  document.getElementById('d-name').textContent = t ? t.name : '德州扑克锦标赛';
+  document.getElementById('d-venue').textContent = t && t.venue ? t.venue : '——';
+
+  // 实时时钟
+  const now = new Date();
+  const p = n => String(n).padStart(2,'0');
+  document.getElementById('d-liveclock').textContent = `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+
+  // 中央
+  document.getElementById('d-level').textContent = clock.levelIdx + 1;
+  document.getElementById('d-level-badge').textContent = `LEVEL ${clock.levelIdx + 1}`;
+  // 回合：每级为一回合（每回合有各自时间），中文显示 第X轮 · 级别X
+  const roundEl = document.getElementById('d-round');
+  if (roundEl) roundEl.textContent = `第${clock.levelIdx + 1}轮 · 级别${clock.levelIdx + 1}`;
+  const ringEl = document.getElementById('d-ring');
+  if (ringEl) {
+    const lvLen = schedule.length;
+    const prog = Math.min(100, Math.max(0, (clock.levelIdx / Math.max(1, lvLen - 1)) * 100));
+    ringEl.style.setProperty('--p', prog);
+  }
+  const ringNum = document.getElementById('d-ring-num');
+  if (ringNum) ringNum.textContent = clock.levelIdx + 1;
+  const timerEl = document.getElementById('d-timer');
+  const breakBanner = document.getElementById('d-break-banner');
+  if (clock.onBreak) {
+    timerEl.textContent = mmss(clock.breakRemain);
+    timerEl.classList.add('break-mode');
+    timerEl.classList.remove('warning');
+    if (breakBanner) breakBanner.classList.add('show');
+  } else {
+    timerEl.textContent = mmss(clock.remainSec);
+    timerEl.classList.remove('break-mode');
+    timerEl.classList.toggle('warning', clock.running && clock.remainSec <= 120);
+    if (breakBanner) breakBanner.classList.remove('show');
+  }
+  document.getElementById('d-sb').textContent = lv.sb.toLocaleString();
+  document.getElementById('d-bb').textContent = lv.bb.toLocaleString();
+  document.getElementById('d-ante').textContent = lv.ante ? lv.ante.toLocaleString() : '0';
+  const nxt = schedule[clock.levelIdx + 1];
+  document.getElementById('d-next').textContent = nxt ? `${nxt.sb.toLocaleString()} / ${nxt.bb.toLocaleString()}` : '已到最高盲注';
+
+  // 左右栏
+  document.getElementById('d-elapsed').textContent = hms(clock.elapsedSec);
+  document.getElementById('d-itm').textContent = t ? t.itmCount : 1;
+  document.getElementById('d-prize').textContent = t ? t.prizePool.toLocaleString() : '0';
+  document.getElementById('d-break').textContent = clock.onBreak ? mmss(clock.breakRemain) : '--:--';
+  document.getElementById('d-deadline').textContent = clock.deadline > 0 ? hms(clock.deadline) : '--:--:--';
+  // 桌台编号 TABLE 01
+  const tableEl = document.getElementById('d-table');
+  if (tableEl) tableEl.textContent = `TABLE ${String((clock.levelIdx % 8) + 1).padStart(2, '0')}`;
+
+  // 玩家状态系统（仅未来竞技场显示）
+  const playersList = document.getElementById('d-players-list');
+  if (playersList) {
+    if (t && t.entries.length) {
+      const live = t.entries.filter(e => e.chips > 0).sort((a, b) => b.chips - a.chips);
+      const total = t.entries.reduce((s, e) => s + e.chips, 0) || 1;
+      const cols = ['#006EFF', '#00F5FF', '#7B2CFF', '#0F9BD8', '#B85CFF'];
+      const maxSlots = Math.max(5, t.maxPlayers || 5);
+      const cards = live.slice(0, maxSlots).map((e, i) => {
+        const pct = Math.max(4, Math.round((e.chips / total) * 100));
+        return `<div class="p-card">
+          <div class="p-avatar" style="--av:${cols[i % cols.length]}">${e.name.charAt(0).toUpperCase()}${e.name.charAt(1) ? e.name.charAt(1) : ''}<span class="p-no">${String(i + 1).padStart(2, '0')}</span></div>
+          <div class="p-info">
+            <div class="p-top"><span class="p-name">${e.name}</span><span class="p-rank">RANK #${i + 1}</span></div>
+            <div class="p-bar"><div class="p-fill" style="width:${pct}%"></div></div>
+            <div class="p-chips">${e.chips.toLocaleString()} 积分</div>
+          </div>
+        </div>`;
+      }).join('');
+      playersList.innerHTML = cards;
+      const hud = document.getElementById('d-players');
+      if (hud) hud.style.display = '';
+    } else {
+      // 空状态：不显示任何等待占位内容，隐藏整个玩家区
+      playersList.innerHTML = '';
+      const hud = document.getElementById('d-players');
+      if (hud) hud.style.display = 'none';
+    }
+  }
+
+  if (t) {
+    const alive = t.entries.filter(e => e.chips > 0);
+    const totalChips = t.entries.reduce((s,e)=>s+e.chips,0);
+    const total = t.maxPlayers > 0 ? t.maxPlayers : t.entries.length;
+    document.getElementById('d-total').textContent = total;
+    document.getElementById('d-alive').textContent = alive.length;
+    document.getElementById('d-chips').textContent = totalChips.toLocaleString();
+    document.getElementById('d-avg').textContent = alive.length ? Math.round(totalChips/alive.length).toLocaleString() : '0';
+    // 规则
+    const rules = t.rules && t.rules.length ? t.rules : [];
+    document.getElementById('d-rules').innerHTML = rules.map(r => `<span class="rt">◆</span>${r}`).join('　');
+  } else {
+    ['d-total','d-alive','d-chips','d-avg'].forEach(id => document.getElementById(id).textContent = '0');
+    document.getElementById('d-rules').innerHTML = '<span class="rt">◆</span>请在控制台创建比赛';
+  }
+}
+
+function renderScheduleView() {
+  document.querySelector('#schedule-table tbody').innerHTML = schedule.map((lv,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${lv.sb.toLocaleString()}</td>
+      <td><b>${lv.bb.toLocaleString()}</b></td>
+      <td>${lv.ante ? lv.ante.toLocaleString() : '-'}</td>
+      <td class="muted">${lv.min} 分钟</td>
+    </tr>`).join('');
+  document.querySelectorAll('#schedule-table tbody tr').forEach((tr,i)=>{
+    tr.className = i===clock.levelIdx ? 'current-level' : (i<clock.levelIdx ? 'past-level' : '');
+  });
+}
+function renderScheduleEdit() {
+  document.querySelector('#edit-schedule-table tbody').innerHTML = schedule.map((lv,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td><input type="number" value="${lv.sb}" data-i="${i}" data-f="sb" style="width:90px" onchange="editLevel(this)"></td>
+      <td><input type="number" value="${lv.bb}" data-i="${i}" data-f="bb" style="width:90px" onchange="editLevel(this)"></td>
+      <td><input type="number" value="${lv.ante}" data-i="${i}" data-f="ante" style="width:80px" onchange="editLevel(this)"></td>
+      <td><input type="number" value="${lv.min}" data-i="${i}" data-f="min" style="width:60px" onchange="editLevel(this)"></td>
+      <td><button class="btn-red btn-mini" onclick="delLevel(${i})">删除</button></td>
+    </tr>`).join('');
+}
+function editLevel(inp) {
+  const i = inp.dataset.i, f = inp.dataset.f;
+  schedule[i][f] = Number(inp.value) || schedule[i][f];
+}
+function addLevel() {
+  const last = schedule[schedule.length-1];
+  schedule.push({ sb: Math.round(last.sb*1.5), bb: Math.round(last.bb*1.5), ante: Math.round(last.ante*1.5), min: last.min });
+  renderScheduleEdit();
+}
+function delLevel(i) {
+  if (schedule.length <= 1) return toast('至少保留一级');
+  schedule.splice(i,1); renderScheduleEdit();
+}
+function saveSchedule() {
+  schedule.forEach(lv => lv.min = lv.min || 20);
+  localStorage.setItem(SCHED_KEY, JSON.stringify(schedule));
+  clock.remainSec = schedule[Math.min(clock.levelIdx, schedule.length-1)].min * 60;
+  renderAll(); toast('✅ 盲注表已保存');
+}
+function resetSchedule() {
+  if (!confirm('恢复默认盲注表？')) return;
+  schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+  saveSchedule(); renderAll(); toast('已恢复默认');
+}
+
+function renderBuyin() {
+  const t = cur();
+  const sel = document.getElementById('pick-player');
+  sel.innerHTML = '<option value="">— 选择会员 —</option>' +
+    db.players.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+  const tbody = document.querySelector('#entries-table tbody');
+  tbody.innerHTML = !t
+    ? '<tr><td colspan="5" class="empty">未开赛 —— 到「赛事设置」开赛</td></tr>'
+    : (t.entries.length === 0
+      ? '<tr><td colspan="5" class="empty">还没有人买入</td></tr>'
+      : t.entries.map(e => `
+        <tr style="${e.chips===0 ? 'opacity:.45' : ''}">
+          <td>${e.name}</td>
+          <td>${e.buyIns}</td>
+          <td>${e.rebuys}</td>
+          <td><b style="color:var(--gold)">${e.chips.toLocaleString()}</b> ${e.chips===0 ? '<span class="muted">(已淘汰)</span>' : ''}</td>
+          <td>
+            ${e.chips>0 ? `<button class="btn-red btn-mini" onclick="bustPlayer('${e.playerId}')">淘汰</button>` : ''}
+            <button class="btn-red btn-mini" onclick="removeEntry('${e.playerId}')">移除</button>
+          </td>
+        </tr>`).join(''));
+}
+
+function renderHistory() {
+  const done = db.tourneys.filter(t => t.status==='finished').sort((a,b)=>b.finishedAt-a.finishedAt);
+  document.getElementById('history-list').innerHTML = done.length===0
+    ? '<div class="empty">还没有完成的赛事</div>'
+    : done.map(t => {
+        const alive = t.entries.filter(e=>e.chips>0).sort((a,b)=>b.chips-a.chips);
+        const tops = alive.slice(0,3).map((e,i)=>`<span style="margin-right:14px">${['🥇','🥈','🥉'][i]} ${e.name} <b style="color:var(--gold)">${e.chips.toLocaleString()}</b></span>`).join('');
+        return `
+        <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+          <div class="row between"><b>${t.name}</b><span class="muted">${fmtTime(t.finishedAt)}</span></div>
+          <div class="muted" style="margin-top:6px">起始筹码 ${t.startStack.toLocaleString()} · ${t.entries.length} 人参与</div>
+          <div style="margin-top:8px;font-size:14px">${tops || '<span class="muted">无存活玩家记录</span>'}</div>
+        </div>`;
+      }).join('');
+}
+
+// ================= 启动 =================
+load();
+// 支持 #screen 直接进投屏、#theme=主题名 直接指定主题（电视/遥控器一键直达）
+const hashTheme = decodeURIComponent((location.hash.match(/theme=([^&]*)/) || [,''])[1]);
+if (hashTheme) { document.body.dataset.theme = hashTheme; document.getElementById('theme-sel').value = hashTheme; }
+const savedTheme = localStorage.getItem(THEME_KEY);
+if (savedTheme && !hashTheme) { document.body.dataset.theme = savedTheme; document.getElementById('theme-sel').value = savedTheme; }
+const savedLayout = localStorage.getItem(LAYOUT_KEY);
+if (savedLayout) { document.body.dataset.layout = savedLayout; document.getElementById('layout-sel').value = savedLayout; }
+
+if (cur() && cur().clock) {
+  clock.levelIdx = Math.min(cur().clock.levelIdx, schedule.length-1);
+  clock.remainSec = cur().clock.remainSec || schedule[clock.levelIdx].min*60;
+  clock.elapsedSec = cur().clock.elapsedSec || 0;
+  clock.onBreak = !!cur().clock.onBreak;
+  clock.breakRemain = cur().clock.breakRemain || 0;
+  clock.pendingAdvance = !!cur().clock.pendingAdvance;
+}
+// #demo：自动造一场演示赛（对标抖音参考图数据，方便预览/截图）
+if (location.hash.includes('demo') && !cur()) {
+  const t = {
+    id:'demo', name:'MTT常规赛[第一场]', venue:'湖北buyy-酒馆', startStack:20000, prizePool:0,
+    itmCount:3, maxPlayers:9,
+    rules:['比赛中禁止通电话','吸烟、牌桌上禁止饮酒','报名截止后不再接受新报名'],
+    status:'ongoing', entries:[
+      {playerId:'p1', name:'阿哲', buyIns:1, rebuys:0, chips:20000},
+      {playerId:'p2', name:'老K', buyIns:1, rebuys:1, chips:40000},
+      {playerId:'p3', name:'大伟', buyIns:1, rebuys:0, chips:6000}
+    ], createdAt:Date.now(), finishedAt:null,
+    clock:{ levelIdx:3, remainSec:6*60+54, elapsedSec:4*3600+48*60+49 }
+  };
+  db.tourneys.push(t); db.currentId = t.id; save();
+  clock.levelIdx = 3; clock.remainSec = 6*60+54; clock.elapsedSec = 4*3600+48*60+49;
+  clock.deadline = 1*3600+17*60+46;
+  // #break：直接进入休息状态（方便预览/截图休息横幅）
+  clock.onBreak = location.hash.includes('break');
+  clock.breakRemain = clock.onBreak ? 10*60 : 0;
+}
+// 实时时钟刷新（大屏显示时每秒更新）
+setInterval(() => { if (document.getElementById('display').classList.contains('active')) { const now=new Date(); const p=n=>String(n).padStart(2,'0'); document.getElementById('d-liveclock').textContent = `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`; } }, 1000);
+if (location.hash.includes('screen')) setTimeout(enterDisplay, 500);
+renderAll();
+</script>
+<script>
+/* ===== PWA：注册 Service Worker（离线可用） ===== */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').then(function (r) {
+      console.log('[PWA] Service Worker 已注册:', r.scope);
+    }).catch(function (e) {
+      console.warn('[PWA] Service Worker 注册失败:', e);
+    });
+  });
+}
+
+/* ===== PWA：手机上提示「添加到主屏幕」（仅在浏览器打开时显示，可关闭） ===== */
+(function () {
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var isMobile = /Android|iPhone|iPad|iPod|HarmonyOS|Mobile/i.test(navigator.userAgent);
+  var inScreen = location.hash.indexOf('screen') >= 0;
+  var dismissed = false;
+  try { dismissed = localStorage.getItem('pwa_hint_dismissed') === '1'; } catch (e) {}
+  if (!isMobile || isStandalone || dismissed || inScreen) return;
+
+  var ua = navigator.userAgent;
+  var isIOS = /iPhone|iPad|iPod/i.test(ua);
+  var tip = isIOS
+    ? '点击底部 <b>分享</b> 按钮 <b>⤴</b> → <b>添加到主屏幕</b>'
+    : '点击 <b>⋮</b> 菜单 → <b>安装应用 / 添加到主屏幕</b>';
+
+  var bar = document.createElement('div');
+  bar.id = 'pwa-hint';
+  bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:99999;' +
+    'max-width:92vw;padding:11px 15px;border-radius:12px;display:flex;align-items:center;gap:11px;' +
+    'background:rgba(14,11,28,.94);border:1px solid rgba(212,175,55,.5);' +
+    'box-shadow:0 8px 30px rgba(0,0,0,.55);color:#f5ead0;' +
+    'font-family:"Microsoft YaHei",system-ui,sans-serif;font-size:13px;line-height:1.5;';
+  bar.innerHTML = '<span style="font-size:20px;line-height:1">📲</span>' +
+    '<span style="flex:1">安装到手机桌面：' + tip + '<br>' +
+    '<span style="color:#9c8b5f;font-size:11.5px">装好后断网也能打开</span></span>' +
+    '<span id="pwa-hint-x" style="cursor:pointer;padding:4px 7px;border-radius:7px;' +
+    'background:rgba(212,175,55,.18);color:#d4af37;font-size:16px;line-height:1">✕</span>';
+  document.body.appendChild(bar);
+
+  document.getElementById('pwa-hint-x').addEventListener('click', function () {
+    bar.remove();
+    try { localStorage.setItem('pwa_hint_dismissed', '1'); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>
