@@ -824,6 +824,222 @@ body[data-layout="giant"] .timer { font-size:clamp(110px,26vw,320px); }
   0% { left:-40%; }
   60%,100% { left:130%; }
 }
+/* =====================================================================
+   ★ 自适应适配层 v2（2026-09-28 新增）
+   目标：和腾讯视频投屏一样 —— 不管电视/手机屏幕多大，整个画面自动缩放铺满，
+        不裁切、不溢出、不重叠。
+   三层保障：
+     A. 尺寸全部改用 vmin（由「屏幕较短边」主导），屏幕越大整体等比放大。
+     B. 子项禁止 flex 收缩 —— 杜绝「内容被压成 0 高 / 底部被裁」。
+     C. JS 等比缩放兜底（.disp-stage）—— 任何极端比例下自动缩小以完整显示。
+   ===================================================================== */
+
+/* ---------- 0. 投屏舞台：所有内容在同一个坐标系里等比缩放 ---------- */
+#display > .disp-stage {
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; flex-direction: column; overflow: hidden;
+  transform-origin: center center;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.disp-stage > * { flex: 0 0 auto; min-height: 0; min-width: 0; }
+
+/* ---------- 1. 结构：禁止子项被压扁 / 撑破 ---------- */
+@supports (height: 100dvh) { #display { height: 100dvh; } }
+.disp-body { flex: 1 1 0 !important; min-height: 0; overflow: visible; }
+.side-col > *, .center-col > *, .ph-list > * { flex: 0 0 auto; }
+.side-col, .center-col, .blinds-row, .info-block { min-height: 0; min-width: 0; }
+.blind-block { min-width: 0 !important; }
+
+/* ---------- 2. 顶栏 ---------- */
+.disp-top { padding: 1.6vmin 2.4vmin; gap: 1.4vmin; }
+.disp-top .liveclock { width: 12vmin; font-size: clamp(14px, 3vmin, 56px); }
+.disp-top .spacer { width: 12vmin; }
+.title-wrap .venue { font-size: clamp(14px, 2.4vmin, 44px) !important; letter-spacing: .3vmin; margin-bottom: .5vmin; }
+.title-wrap .tname { font-size: clamp(20px, 4.2vmin, 92px) !important; letter-spacing: .6vmin; }
+.level-badge { font-size: clamp(16px, 3.4vmin, 80px) !important; }
+
+/* ---------- 3. 三栏主体 ---------- */
+.disp-body { gap: 1.4vmin; padding: 1vmin 2.4vmin; align-items: stretch; }
+.side-col { gap: 1.2vmin; }
+.info-block { padding: 1.4vmin 1.2vmin; border-radius: 1.2vmin; }
+.info-block .lbl { font-size: clamp(10px, 1.7vmin, 34px); letter-spacing: .2vmin; margin-bottom: .5vmin; }
+.info-block .val { font-size: clamp(16px, 4.2vmin, 88px) !important; }
+body[data-theme="未来竞技场"] .table-block .val { font-size: clamp(13px, 2.6vmin, 42px) !important; }
+
+/* ---------- 4. 中央计时区 ---------- */
+.center-col { gap: .8vmin; }
+.round-line { font-size: clamp(16px, 3.2vmin, 78px) !important; }
+.timer { font-size: clamp(64px, 24vmin, 460px) !important; line-height: .92; margin: .4vmin 0; }
+.blinds-row { gap: 1.6vmin; }
+.blind-block { padding: 1.4vmin 2.2vmin; border-radius: 1.2vmin; }
+.blind-block .lbl { font-size: clamp(10px, 1.6vmin, 34px); letter-spacing: .2vmin; }
+.blind-block .num { font-size: clamp(22px, 7vmin, 150px) !important; }
+.next-line { font-size: clamp(13px, 3.4vmin, 72px) !important; }
+.ante-line { font-size: clamp(11px, 2vmin, 42px); }
+.break-banner { margin-top: .6vmin; padding: 1.2vmin 2.4vmin; border-radius: 1.6vmin; }
+.break-banner .bb-title { font-size: clamp(26px, 7vmin, 150px) !important; }
+.break-banner .bb-sub { font-size: clamp(14px, 2.6vmin, 50px) !important; }
+/* 环形等级：屏幕不高时隐藏（与「当前级别」信息重复，且占地大） */
+@media (max-height: 800px) {
+  body[data-theme="未来竞技场"] .level-ring { display: none !important; }
+}
+body[data-theme="未来竞技场"] .level-ring { width: clamp(56px, 8vmin, 120px); }
+
+/* 精品俱乐部版：中央单列，全部换 vmin */
+body[data-theme="精品俱乐部版"] .center-col { max-width: 94vw; row-gap: 1.2vmin !important; }
+body[data-theme="精品俱乐部版"] .round-line { font-size: clamp(16px, 3.2vmin, 60px) !important; }
+body[data-theme="精品俱乐部版"] .timer { font-size: clamp(64px, 22vmin, 420px) !important; }
+body[data-theme="精品俱乐部版"] .blinds-row { gap: 3vmin !important; }
+body[data-theme="精品俱乐部版"] .blind-block { padding: 2vmin 2.6vmin !important; }
+body[data-theme="精品俱乐部版"] .blind-block .num,
+body[data-theme="精品俱乐部版"] .blind-block.hl .num { font-size: clamp(22px, 6.4vmin, 150px) !important; }
+body[data-theme="精品俱乐部版"] .next-line { font-size: clamp(18px, 4.6vmin, 82px) !important; padding: 1.2vmin 2.6vmin !important; }
+
+/* ---------- 5. 玩家状态条 ---------- */
+body[data-theme="未来竞技场"] .player-hud {
+  margin: 0 2.4vmin 1.2vmin !important;
+  padding: 1.2vmin 1.4vmin !important;
+  gap: 1.2vmin !important;
+}
+/* 竖排「PLAYERS」会按文字长度撑出整屏高度（把底栏顶飞的元凶），改横排 */
+body[data-theme="未来竞技场"] .ph-title {
+  writing-mode: horizontal-tb !important;
+  height: auto !important; align-self: center;
+  border-left: none !important; padding-left: 0 !important;
+  border-right: 2px solid rgba(0,245,255,.5); padding-right: .8vmin;
+  letter-spacing: .2vmin; font-size: clamp(10px, 1.5vmin, 26px) !important;
+  white-space: nowrap;
+}
+body[data-theme="未来竞技场"] .ph-list { gap: 1.2vmin; }
+.p-card { gap: .8vmin; max-width: none; }
+.p-avatar { width: clamp(28px, 4.6vmin, 64px); font-size: clamp(12px, 2vmin, 28px); }
+.p-name { font-size: clamp(11px, 1.8vmin, 24px); }
+.p-rank { font-size: clamp(9px, 1.4vmin, 18px); letter-spacing: .1vmin; }
+.p-bar { height: clamp(6px, .9vmin, 12px); margin-top: .4vmin; }
+.p-chips { font-size: clamp(9px, 1.5vmin, 18px); }
+.ph-empty { font-size: clamp(11px, 1.8vmin, 22px); }
+
+/* ---------- 6. 底栏 ---------- */
+.disp-bottom { padding: 1.2vmin 2.4vmin 1.4vmin; gap: 1.2vmin; }
+.signup-btn { padding: 1.2vmin 2.4vmin; font-size: clamp(14px, 2.6vmin, 46px) !important; border-radius: 1.6vmin; }
+.disp-rules { font-size: clamp(12px, 2.1vmin, 40px); line-height: 1.45; }
+.disp-deadline { font-size: clamp(12px, 2.1vmin, 40px); }
+.disp-disclaimer { font-size: clamp(10px, 1.7vmin, 34px) !important; letter-spacing: .2vmin; padding: .4vmin 0; }
+
+/* ---------- 7. 悬浮控件（原来固定 64px，手机上会挡内容） ---------- */
+.disp-ctrl { gap: .8vmin; right: 1.2vmin; }
+.disp-ctrl button {
+  width: clamp(30px, 6vmin, 64px) !important; height: clamp(30px, 6vmin, 64px) !important;
+  font-size: clamp(13px, 2.6vmin, 26px) !important;
+}
+.disp-exit {
+  top: 1.2vmin !important; right: 1.2vmin !important;
+  padding: .8vmin 1.4vmin !important; font-size: clamp(11px, 2vmin, 28px) !important;
+}
+
+/* ============================================================
+   断点 A：手机竖屏（宽高比 ≤ 3/4）→ 单列紧凑布局
+   ============================================================ */
+@media (max-aspect-ratio: 3 / 4) {
+  .disp-top { padding: 1.2vmin 3vmin; }
+  .disp-top .liveclock, .disp-top .spacer { display: none !important; }
+  .title-wrap .tname { letter-spacing: .3vmin; }
+
+  .disp-body {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 1fr auto !important;
+    gap: 1.2vmin !important;
+    padding: 1vmin 3vmin !important;
+  }
+  .center-col { order: -1; }
+  .side-col {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .8vmin !important;
+    justify-content: stretch !important;
+  }
+  .info-block { padding: .9vmin 1vmin; }
+  .info-block .lbl { font-size: clamp(9px, 1.5vmin, 20px) !important; margin-bottom: .2vmin; letter-spacing: 0; }
+  .info-block .val { font-size: clamp(13px, 3.4vmin, 44px) !important; }
+  body[data-theme="未来竞技场"] .table-block .val { font-size: clamp(10px, 2.2vmin, 28px) !important; }
+
+  .level-ring { display: none !important; }
+  .timer { font-size: clamp(44px, 21vmin, 230px) !important; }
+  .blind-block { padding: 1.2vmin 2vmin !important; }
+  .blind-block .num { font-size: clamp(18px, 5.6vmin, 76px) !important; }
+  body[data-theme="精品俱乐部版"] .blind-block { padding: 1.6vmin 3vmin !important; }
+  body[data-theme="精品俱乐部版"] .next-line { font-size: clamp(15px, 4vmin, 48px) !important; }
+
+  .player-hud { margin: 0 3vmin .8vmin !important; padding: 1vmin 1.2vmin !important; }
+  body[data-theme="未来竞技场"] .ph-title { display: none !important; }
+  .p-avatar { width: clamp(22px, 3.4vmin, 40px); font-size: clamp(10px, 1.6vmin, 20px); }
+  .p-name { font-size: clamp(10px, 1.7vmin, 18px); }
+  .p-chips { font-size: clamp(9px, 1.5vmin, 16px); }
+
+  .disp-bottom { flex-wrap: wrap; padding: 1vmin 3vmin 1.2vmin !important; }
+  .disp-rules, .disp-deadline { flex: 1 1 100%; text-align: center; }
+  .chip-deco { display: none !important; }
+  .disp-ctrl button { width: clamp(26px, 5vmin, 44px) !important; height: clamp(26px, 5vmin, 44px) !important; }
+}
+
+/* ============================================================
+   断点 B：矮屏横向（手机横屏 / 小窗口）→ 整体压缩
+   ============================================================ */
+@media (max-height: 520px) {
+  .disp-top { padding: .8vmin 2.4vmin; }
+  .title-wrap .venue { font-size: clamp(11px, 2vmin, 32px) !important; margin-bottom: 0; }
+  .title-wrap .tname { font-size: clamp(15px, 3.4vmin, 64px) !important; }
+  .level-ring { display: none !important; }
+  .center-col { gap: .4vmin; }
+  .timer { font-size: clamp(44px, 21vmin, 320px) !important; }
+  .blind-block { padding: .8vmin 1.6vmin !important; }
+  .blind-block .num { font-size: clamp(18px, 6vmin, 120px) !important; }
+  .disp-bottom { padding: .6vmin 2.4vmin .8vmin !important; }
+  .chip-deco { display: none !important; }
+  .disp-ctrl button { width: clamp(24px, 5vmin, 48px) !important; height: clamp(24px, 5vmin, 48px) !important; }
+}
+@media (max-height: 430px) {
+  .ante-line { display: none !important; }        /* 极限矮屏优先保倒计时与盲注 */
+  .player-hud { margin: 0 2.4vmin .6vmin !important; padding: .6vmin 1.2vmin !important; }
+}
+
+/* ============================================================
+   控制台（手机端）适配
+   ============================================================ */
+#console { min-height: 100vh; }
+@supports (height: 100dvh) { #console { min-height: 100dvh; } }
+@media (max-width: 640px) {
+  .console-head { padding: 16px 12px 6px; }
+  .console-head .logo { font-size: 10px; letter-spacing: 5px; }
+  .console-head h1 { font-size: 19px; letter-spacing: 1px; }
+  .console-head p { font-size: 11.5px; }
+  .top-actions { gap: 8px; margin: 10px auto 4px; }
+  .top-actions select { flex: 1 1 46%; min-width: 0; font-size: 13px; padding: 9px 10px; }
+  .top-actions .btn-big { flex: 1 1 100%; font-size: 15px; padding: 12px 18px; }
+  .tabs { gap: 6px; margin: 10px auto; }
+  .tab-btn { padding: 8px 11px; font-size: 12.5px; }
+  .panel { padding: 0 10px; }
+  .card { padding: 14px; border-radius: 13px; }
+  .card h2 { font-size: 14.5px; }
+  .row { gap: 8px; }
+  .btn-big { font-size: 14px; padding: 10px 16px; }
+  #panel-setup input[style*="flex:1"] { flex: 1 1 100% !important; min-width: 0 !important; }
+  #panel-setup input[style*="width"] { width: 84px !important; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat-box { padding: 12px; }
+  .stat-box .num { font-size: 21px; }
+  .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }   /* 表格横向滑动，不撑破页宽 */
+  #schedule-table, #history-list table { min-width: 460px; }
+  th, td { padding: 7px 6px; font-size: 12.5px; white-space: nowrap; }
+  html, body { overflow-x: hidden; }
+  #console { padding-bottom: 24px; }
+}
+
+/* 控制台（平板 / 小笔记本）*/
+@media (max-width: 900px) and (min-width: 641px) {
+  .console-head h1 { font-size: 22px; }
+  .panel, .tabs, .top-actions { padding-left: 18px; padding-right: 18px; }
+}
 </style>
 </head>
 <body data-theme="未来竞技场" data-layout="standard">
@@ -996,6 +1212,7 @@ body[data-layout="giant"] .timer { font-size:clamp(110px,26vw,320px); }
 
 <!-- ================= 全屏投屏大屏 ================= -->
 <div id="display">
+  <div class="disp-stage">
   <div class="brand-wing left"></div>
   <div class="brand-wing right"></div>
   <div class="disp-top">
@@ -1084,6 +1301,7 @@ body[data-layout="giant"] .timer { font-size:clamp(110px,26vw,320px); }
 
   <div class="disp-disclaimer">⚠️ 比赛计时器 · 竞技赛事专用 · 禁止赌博 无不良引导</div>
 </div>
+  </div><!-- /disp-stage -->
 
 <!-- 大屏右上角常驻退出按钮（投屏也可见） -->
 <div class="disp-exit" id="disp-exit" onclick="exitDisplay()" title="退出投屏">
@@ -1377,6 +1595,8 @@ function enterDisplay() {
   const el = document.documentElement;
   if (el.requestFullscreen) el.requestFullscreen().catch(()=>{});
   else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  setTimeout(fitDisplay, 120);
+  setTimeout(fitDisplay, 700);   // 全屏切换后再校一次
 }
 function exitDisplay() {
   const d = document.getElementById('display');
@@ -1653,6 +1873,47 @@ if (location.hash.includes('demo') && !cur()) {
 }
 // 实时时钟刷新（大屏显示时每秒更新）
 setInterval(() => { if (document.getElementById('display').classList.contains('active')) { const now=new Date(); const p=n=>String(n).padStart(2,'0'); document.getElementById('d-liveclock').textContent = `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`; } }, 1000);
+// ===== 投屏等比自适应：像投屏视频一样自动缩放到当前屏幕（电视/手机通用） =====
+function fitDisplay() {
+  const d = document.getElementById('display');
+  const s = d && d.querySelector('.disp-stage');
+  if (!d || !s) return;
+  if (!d.classList.contains('active')) { s.style.transform = ''; return; }
+  s.style.transform = 'none';
+  // 只统计「参与布局」的子项；sweep / chip-deco 这类绝对定位装饰不参与
+  let top = Infinity, bottom = -Infinity, left = Infinity, right = -Infinity;
+  const kids = s.children;
+  for (let n = 0; n < kids.length; n++) {
+    const el = kids[n];
+    const cs = getComputedStyle(el);
+    if (cs.position === 'absolute' || cs.position === 'fixed' || cs.display === 'none') continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 && r.height < 1) continue;
+    if (r.top < top) top = r.top;
+    if (r.bottom > bottom) bottom = r.bottom;
+    if (r.left < left) left = r.left;
+    if (r.right > right) right = r.right;
+  }
+  if (!isFinite(bottom) || !isFinite(right)) { return; }
+  const cs2 = getComputedStyle(s);
+  const needW = (right - left) + parseFloat(cs2.paddingLeft || 0) + parseFloat(cs2.paddingRight || 0);
+  const needH = (bottom - top) + parseFloat(cs2.paddingTop || 0) + parseFloat(cs2.paddingBottom || 0);
+  if (!needW || !needH) return;
+  const k = Math.min(1, d.clientWidth / needW, d.clientHeight / needH);
+  s.style.transform = k < 0.995 ? 'scale(' + k.toFixed(4) + ')' : '';
+  window.__dispFit = { availW: d.clientWidth, availH: d.clientHeight,
+                       needW: Math.round(needW), needH: Math.round(needH), k: +k.toFixed(4) };
+}
+
+window.addEventListener('resize', fitDisplay);
+window.addEventListener('orientationchange', function () { setTimeout(fitDisplay, 300); });
+if (window.ResizeObserver) {
+  try {
+    const _ro = new ResizeObserver(function () { fitDisplay(); });
+    _ro.observe(document.getElementById('display'));
+    _ro.observe(document.querySelector('.disp-stage'));
+  } catch (e) {}
+}
 if (location.hash.includes('screen')) setTimeout(enterDisplay, 500);
 renderAll();
 </script>
