@@ -1605,10 +1605,9 @@ function enterDisplay() {
   document.getElementById('disp-ctrl').style.display = 'flex';
   document.getElementById('disp-exit').style.display = 'flex';
   renderDisplay();
-  // 尝试进入浏览器全屏
-  const el = document.documentElement;
-  if (el.requestFullscreen) el.requestFullscreen().catch(()=>{});
-  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  // 尝试进入浏览器全屏（隐藏地址栏/工具栏）。注意：全屏必须由用户手势触发；
+  // 若是 #screen/#demo 自动进入，这里会被浏览器静默拒绝——交给下方手势补偿。
+  ptEnterFullscreen();
   setTimeout(fitDisplay, 120);
   setTimeout(fitDisplay, 700);   // 全屏切换后再校一次
 }
@@ -1626,6 +1625,32 @@ document.addEventListener('fullscreenchange', () => {
     // 用户按 ESC 退出全屏，但保留大屏显示（仍是投屏视图，只是窗口化）
   }
 });
+
+/* ===== 全屏手势补偿（2026-09-28 用户要求：点开后网址栏自动消失）=====
+   浏览器只允许在「用户手势」里调 requestFullscreen。从 #screen 直达、或从桌面图标
+   打开时没有手势 → 全屏被静默拒绝 → 地址栏/工具栏一直挂在上面。
+   做法：需要全屏时挂一次性监听，用户任意一次点击/触摸/按键都补一次全屏请求。 */
+window.__ptNeedFs = false;
+function ptEnterFullscreen() {
+  const el = document.documentElement;
+  const f = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+  if (!f) { window.__ptNeedFs = false; return; }   // iOS Safari 无元素全屏 API
+  window.__ptNeedFs = true;
+  try { const p = f.call(el); if (p && p.catch) p.catch(()=>{}); } catch (e) {}
+}
+function ptFsRetry() {
+  if (!window.__ptNeedFs || document.fullscreenElement) return;
+  const el = document.documentElement;
+  const f = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+  if (!f) { window.__ptNeedFs = false; return; }
+  try { const p = f.call(el); if (p && p.catch) p.catch(()=>{}); } catch (e) {}
+}
+['pointerdown', 'touchend', 'click', 'keydown'].forEach((ev) =>
+  window.addEventListener(ev, ptFsRetry, { capture: true, passive: true }));
+document.addEventListener('fullscreenchange', () => {
+  if (document.fullscreenElement) window.__ptNeedFs = false;
+});
+// F11 等手动全屏退出后，再点一下也能重新补偿
 
 // ================= 渲染 =================
 document.querySelectorAll('.tab-btn').forEach(btn => {
