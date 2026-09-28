@@ -2,7 +2,7 @@
  * 策略：预缓存全部资源（2 个文件）→ 之后完全离线可用
  * 图标缓存失败不阻断安装
  */
-const CACHE = 'poker-timer-v2';   // v2: 2026-09-28 自适应适配层（电视/手机自动缩放）
+const CACHE = 'poker-timer-v4';   // v4: 2026-09-28 横屏无白边（viewport-fit=cover + 锁滚动）
 
 /* 核心资源：缺一不可 */
 const CORE = ['./', './index.html', './manifest.json'];

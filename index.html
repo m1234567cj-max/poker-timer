@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>德州扑克赛事投屏计时系统</title>
 <!-- ===== PWA：可安装 + 离线可用（2026-09-27 加） ===== -->
 <link rel="manifest" href="manifest.json">
@@ -10,6 +10,7 @@
 <meta name="description" content="德州扑克竞技俱乐部赛事投屏计时器 · 盲注时钟 · 12 套主题 · 可离线使用">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<!-- 投屏全屏：内容延伸到状态栏下（配合 viewport-fit=cover 才是真·无边框） -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="扑克计时器">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -395,14 +396,20 @@ body[data-theme="抖音红焰版"] .disp-disclaimer { color:#FFE9C9; }
 
 * { margin:0; padding:0; box-sizing:border-box; }
 html,body { height:100%; }
+html { background:#05070D; }          /* 滚动过冲/橡皮筋时不露白底 */
 body {
   font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;
   color:var(--text);
   background:
     radial-gradient(1200px 600px at 50% -10%, rgba(120,70,220,.22), transparent 60%),
     linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 100%);
-  overflow-x:hidden;
+  background-color:#05070D;           /* 渐变外的兜底底色 */
+  overflow-x:hidden; overscroll-behavior:none;
 }
+/* 投屏时锁死滚动：手机横屏下 body 仍可能被判定可滚动，
+   滚动/过冲会露出窗口底色 —— 这就是「横屏白边」的直接来源 */
+body:has(#display.active) { overflow:hidden; }
+@supports not selector(:has(*)) { body.disp-lock { overflow:hidden; } }
 ::-webkit-scrollbar { width:10px; height:10px; }
 ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.15); border-radius:6px; }
 
@@ -839,7 +846,10 @@ body[data-layout="giant"] .timer { font-size:clamp(110px,26vw,320px); }
   position: absolute; inset: 0; z-index: 1;
   display: flex; flex-direction: column; overflow: hidden;
   transform-origin: center center;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* 四周只做极小的均匀安全边距；不依赖 env()（视口未开启 cover 时 env() 恒为 0，
+     昔日会让内容完全贴边 → 一侧贴边一侧留边的「白边」错觉） */
+  padding: max(1.5vmin, env(safe-area-inset-top)) max(1.5vmin, env(safe-area-inset-right))
+           max(1.5vmin, env(safe-area-inset-bottom)) max(1.5vmin, env(safe-area-inset-left));
 }
 .disp-stage > * { flex: 0 0 auto; min-height: 0; min-width: 0; }
 
@@ -1589,6 +1599,7 @@ function setLayout(v) {
 // ================= 投屏 =================
 function enterDisplay() {
   document.getElementById('console').style.display = 'none';
+  document.body.classList.add('disp-lock');   // 老浏览器兜底：锁死滚动，杜绝过冲露白
   const d = document.getElementById('display');
   d.classList.add('active');
   document.getElementById('disp-ctrl').style.display = 'flex';
@@ -1604,6 +1615,7 @@ function enterDisplay() {
 function exitDisplay() {
   const d = document.getElementById('display');
   d.classList.remove('active');
+  document.body.classList.remove('disp-lock');
   document.getElementById('disp-ctrl').style.display = 'none';
   document.getElementById('disp-exit').style.display = 'none';
   document.getElementById('console').style.display = '';
